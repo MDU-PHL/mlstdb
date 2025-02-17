@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mlstdb"
+dynamic = ["version"]
+description = 'A Python package to update and manage the MLST database for the MLST tool.'
+readme = "README.md"
+requires-python = ">=3"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Himal Shrestha", email = "stha.himal2007@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+dependencies = [
+    "click>=8.0.0",
+    "requests>=2.25.0",
+    "tqdm>=4.65.0",
+    "rauth>=0.7.3",
+    "pathlib>=1.0.1",
+    "configparser>=5.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+]
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=4.1.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/himal2007/mlstdb#readme"
+Issues = "https://github.com/himal2007/mlstdb/issues"
+Source = "https://github.com/himal2007/mlstdb"
+
+[project.scripts]
+mlstdb = "mlstdb.cli:mlstdb"
+
+[tool.hatch.version]
+path = "src/mlstdb/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/mlstdb tests}"
+
+[tool.hatch.build]
+include = [
+    "src/mlstdb/data/*.tab",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mlstdb"]
+package-data = {"mlstdb" = ["data/*.tab"]}
+
+[tool.coverage.run]
+source_pkgs = ["mlstdb", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/mlstdb/__about__.py",
+]
+
+[tool.coverage.paths]
+mlstdb = ["src/mlstdb", "*/mlstdb/src/mlstdb"]
+tests = ["tests", "*/mlstdb/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
