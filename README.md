@@ -23,7 +23,7 @@ Should install `mlst` for the use of this tool.
 
 ## Installation
 
-From bioconda: TODO:
+From bioconda: 
 ```console
 conda install -c bioconda mlstdb
 ```
