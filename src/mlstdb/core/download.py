@@ -9,12 +9,13 @@ from typing import Dict, Optional, List
 from tqdm import tqdm
 from rauth import OAuth1Session
 from mlstdb.core.config import get_config_dir, BASE_API
-from mlstdb.core.auth import remove_db_credentials
+from mlstdb.core.auth import remove_db_credentials, register_tokens
 from mlstdb.utils import error, success, info
 
 def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
+    """Fetch JSON from URL with authentication and auto token refresh."""
     if verbose:
-        print(f"Fetching JSON from {url}")
+        info(f"Fetching JSON from {url}")
     
     session = OAuth1Session(
         consumer_key=client_key,
@@ -28,40 +29,46 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
     try:
         response = session.get(url)
         if verbose:
-            print(f"Response code: {response.status_code}, URL: {url}")
+            info(f"Response code: {response.status_code}")
         if response.status_code == 404:
             print(f"Resource not found at URL: {url}")
-            return None
+            return None    
+        if response.status_code == 401:
+            if verbose:
+                info("Session token expired, attempting to refresh...")
+            # Get database type from URL
+            db = 'pubmlst' if 'pubmlst.org' in url else 'pasteur'
+            
+            # Register new tokens
+            new_token, new_secret = register_tokens(db)
+            
+            # Retry with new token
+            session = OAuth1Session(
+                consumer_key=client_key,
+                consumer_secret=client_secret,
+                access_token=new_token,
+                access_token_secret=new_secret,
+            )
+            session.headers.update({"User-Agent": "BIGSdb downloader"})
+            response = session.get(url)
+            
         response.raise_for_status()
         return response.json()
+        
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:  # Handle both 401 and 403
+        if e.response.status_code == 403:
             config_dir = get_config_dir()
-            
-            error(f"\nAuthentication Failed! (Status code: {e.response.status_code})")
-            if e.response.status_code == 401:
-                info("This usually means your tokens have expired. Please check your credentials.")
-            else:
-                info("This usually means you lack permissions for this resource. Please check your credentials.")
-                
-            # Show credential locations
-            info("\nYour credentials are stored in:")
-            for cred_file in ["client_credentials", "session_tokens", "access_tokens"]:
-                info(f"- {config_dir}/{cred_file}")
-
-            # Inform user about next steps
-            info("\nTo fix authentication issues:")
+            error(f"\nAuthentication Failed! (Status code: 403)")
+            info("This usually means you lack permissions for this resource.")
+            info("\nTo fix permission issues:")
             info("1. You need to manually delete your credentials from the files above")
             info("2. Run the script again to generate new credentials")
             
             # Offer to delete credentials
             if click.confirm("\nWould you like to delete credentials for this database?", default=False):
                 try:
-                    # Use the db parameter from the main function
-                    if url.startswith(BASE_API['pubmlst']):
-                        db = 'pubmlst'
-                    elif url.startswith(BASE_API['pasteur']):
-                        db = 'pasteur'
+                    # Get database type from URL
+                    db = 'pubmlst' if 'pubmlst' in url else 'pasteur'
                     remove_db_credentials(config_dir, db)
                     info("\nCredentials deleted successfully.")
                     info("Please run the script again to generate new credentials.")
@@ -91,7 +98,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)
+        response = session.get(url)    
         response.raise_for_status()
         mlst_scheme = response.json()
         
@@ -126,12 +133,32 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
             
+        # Handle expired token (401)
+        if response.status_code == 401:
+            if verbose:
+                info("Session token expired, attempting to refresh...")
+            # Get database type from URL    
+            db = 'pubmlst' if 'pubmlst.org' in url else 'pasteur'
+            
+            # Register new tokens
+            new_token, new_secret = register_tokens(db)
+            
+            # Retry with new token
+            session = OAuth1Session(
+                consumer_key=client_key,
+                consumer_secret=client_secret,
+                access_token=new_token,
+                access_token_secret=new_secret,
+            )
+            session.headers.update({"User-Agent": "BIGSdb downloader"})
+            response = session.get(url)
+                
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:
-            error("\nAuthentication failed!")
-            info("\nTo fix authentication issues:")
-            info("1. Run 'fetch.py' to refresh your credentials")
-            info("2. Try running this script again")
+        if e.response.status_code == 403:
+            error("\nAuthentication failed - permission denied!")
+            info("\nTo fix permission issues:")
+            info("1. Ensure your account has access to this database")
+            info("2. Try re-authenticating with proper credentials") 
             sys.exit(1)
         elif e.response.status_code == 404:
             error(f"Resource not found at URL: {url}")

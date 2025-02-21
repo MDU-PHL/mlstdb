@@ -33,13 +33,48 @@ def setup_client_credentials(site: str) -> Tuple[str, str]:
     success(f"\nClient credentials saved to {file_path}")
     return client_id, client_secret
 
-def register_tokens(db: str):
+def register_tokens(db: str, refresh: bool = False) -> Tuple[str, str]:
     """Setup authentication tokens by registering with the service."""
-    info(f"\nNo tokens found for {db}. Starting registration process...")
     
-    # Setup client credentials
-    client_id, client_secret = setup_client_credentials(db)
+    config_dir = get_config_dir()
     
+    # If not refreshing, try to use existing tokens first
+    if not refresh:
+        session_token, session_secret = retrieve_session_token(db)
+        if session_token and session_secret:
+            # Get client credentials for token validation
+            try:
+                client_id, client_secret = get_client_credentials(db)
+                # Verify if token is still valid
+                try:
+                    test_url = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/schemes"
+                    session = OAuth1Session(
+                        consumer_key=client_id,
+                        consumer_secret=client_secret,
+                        access_token=session_token,
+                        access_token_secret=session_secret
+                    )
+                    r = session.get(test_url, headers={"User-Agent": "BIGSdb downloader"})
+                    if r.status_code == 200:
+                        return session_token, session_secret
+                    elif r.status_code == 401:
+                        info("Existing token expired, generating new one...")
+                    else:
+                        r.raise_for_status()
+                except Exception as e:
+                    info(f"Token validation failed, generating new one... ({str(e)})")
+            except ValueError:
+                info("Client credentials not found, will generate new tokens...")
+
+    info(f"\nGenerating new session token for {db}...")
+    
+    # Get existing client credentials if available
+    try:
+        client_id, client_secret = get_client_credentials(db)
+    except ValueError:
+        # If no credentials exist, set them up
+        client_id, client_secret = setup_client_credentials(db)
+   
     # Initialize OAuth service
     service = OAuth1Service(
         name="BIGSdb_downloader",
