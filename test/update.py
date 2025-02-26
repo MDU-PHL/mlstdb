@@ -128,8 +128,9 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         if e.response.status_code in [401, 403]:
             error("\nAuthentication failed!")
             info("\nTo fix authentication issues:")
-            info("1. Run 'fetch.py' to refresh your credentials")
-            info("2. Try running this script again")
+            info("Run 'mlstdb fetch' to refresh your credentials for the database you are trying to access.")
+            info("Then try running this script again.")
+            # info("2. Try running this script again")
             sys.exit(1)
         elif e.response.status_code == 404:
             error(f"Resource not found at URL: {url}")
