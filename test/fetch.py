@@ -165,6 +165,16 @@ def register_tokens(db: str):
         config.write(configfile)
     
     success(f"\nSession token saved to {file_path}")
+    # New user-friendly notice after registration
+    click.secho("\n=== Registration Complete ===", fg="green", bold=True)
+    click.echo("\nThe script will now fetch MLST scheme data, which may take a while.")
+    click.echo("The process will download data from multiple databases and may take several minutes.")
+    
+    if not click.confirm("\nDo you want to continue with data fetching now?", default=True):
+        info("You can run the script again later to fetch the data.")
+        sys.exit(0)
+    
+    # If user wants to continue, return the tokens
     return token, secret
 
 @click.command()
@@ -175,9 +185,9 @@ def register_tokens(db: str):
 @click.option('--match', '-m', default='MLST', 
               help='Scheme name must include provided term (default: MLST)')
 @click.option('--scheme-uris', '-s', default='scheme_uris.tab',
-              help='Path to scheme_uris.tab file for scheme sanitisation')
+              help='Path to scheme_uris.tab file for sanitisation')
 @click.option('--filter', '-f',
-              help='Filter species or schemes using a wildcard pattern during scheme sanitisation')
+              help='Filter species or schemes using a wildcard pattern during sanitisation')
 @click.option('--resume', '-r', is_flag=True, 
               help='Resume processing from where it stopped')
 @click.option('--verbose', '-v', is_flag=True, 
@@ -274,12 +284,12 @@ def main(db, exclude, match, scheme_uris, filter, resume, verbose):  # Added sch
             except OSError as e:
                 error(f"Error removing progress file: {e}")
 
-        # After successful fetch, perform scheme sanitisation
+        # After successful fetch, perform sanitisation
         if Path(scheme_uris).exists():
             sanitise_output(output_file, scheme_uris, filter, verbose)
         else:
             error(f"Scheme URIs file not found: {scheme_uris}")
-            error("Skipping scheme sanitisation step")    
+            error("Skipping sanitisation step")    
                     
     except Exception as e:
         error(f"An error occurred: {e}")
@@ -375,7 +385,6 @@ def remove_db_credentials(config_dir: Path, db: str) -> None:
                     config.write(f)
                 success(f"Removed {db} credentials from {file_name}")
 
-
 def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
     """Fetch JSON from URL with OAuth authentication and session token refresh."""
     if verbose:
@@ -399,7 +408,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             print(f"Resource not found at URL: {url}")
             return None
         
-        # Handle 401 Unauthorized error - try once to refresh token
+        # Handle 401 Unauthorised error - try once to refresh token
         if response.status_code == 401:
             info("Invalid session token. Requesting new one...")
             
@@ -507,6 +516,68 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
 
         raise
 
+# def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
+#     if verbose:
+#         print(f"Fetching JSON from {url}")
+    
+#     session = OAuth1Session(
+#         consumer_key=client_key,
+#         consumer_secret=client_secret,
+#         access_token=session_token,
+#         access_token_secret=session_secret,
+#     )
+    
+#     session.headers.update({"User-Agent": "BIGSdb downloader"})
+
+#     try:
+#         response = session.get(url)
+#         if verbose:
+#             print(f"Response code: {response.status_code}, URL: {url}")
+#         if response.status_code == 404:
+#             print(f"Resource not found at URL: {url}")
+#             return None
+#         response.raise_for_status()
+#         return response.json()
+#     except requests.exceptions.HTTPError as e:
+#         if e.response.status_code in [401, 403]:  # Handle both 401 and 403
+#             config_dir = get_config_dir()
+            
+#             error(f"\nAuthentication Failed! (Status code: {e.response.status_code})")
+#             if e.response.status_code == 401:
+#                 info("This usually means your tokens have expired. Please check your credentials.")
+#             else:
+#                 info("This usually means you lack permissions for this resource. Please check your credentials.")
+                
+#             # Show credential locations
+#             info("\nYour credentials are stored in:")
+#             for cred_file in ["client_credentials", "session_tokens", "access_tokens"]:
+#                 info(f"- {config_dir}/{cred_file}")
+
+#             # Inform user about next steps
+#             info("\nTo fix authentication issues:")
+#             info("1. You need to manually delete your credentials from the files above")
+#             info("2. Run the script again to generate new credentials")
+            
+#             # Offer to delete credentials
+#             if click.confirm("\nWould you like to delete credentials for this database?", default=False):
+#                 try:
+#                     # Use the db parameter from the main function
+#                     if url.startswith(BASE_API['pubmlst']):
+#                         db = 'pubmlst'
+#                     elif url.startswith(BASE_API['pasteur']):
+#                         db = 'pasteur'
+#                     remove_db_credentials(config_dir, db)
+#                     info("\nCredentials deleted successfully.")
+#                     info("Please run the script again to generate new credentials.")
+#                     sys.exit(1)
+#                 except Exception as del_error:
+#                     error(f"Failed to delete credentials: {del_error}")
+#                     sys.exit(1)
+            
+#             error("Exiting. Please fix credentials and try again")
+#             sys.exit(1)
+#         raise
+
 def sanitise_species(species_column: str) -> str:
     """Clean up species names."""
     return species_column.replace("sequence/profile definitions", "").strip()
@@ -611,7 +682,7 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
         for entry in sanitised_data:
             outfile.write('\t'.join(str(x) for x in entry) + '\n')
     
-    success(f"Scheme sanitisation complete! Results updated in {output_file}")
+    success(f"Sanitisation complete! Results updated in {output_file}")
       
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
