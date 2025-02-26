@@ -175,9 +175,9 @@ def register_tokens(db: str):
 @click.option('--match', '-m', default='MLST', 
               help='Scheme name must include provided term (default: MLST)')
 @click.option('--scheme-uris', '-s', default='scheme_uris.tab',
-              help='Path to scheme_uris.tab file for sanitisation')
+              help='Path to scheme_uris.tab file for scheme sanitisation')
 @click.option('--filter', '-f',
-              help='Filter species or schemes using a wildcard pattern during sanitisation')
+              help='Filter species or schemes using a wildcard pattern during scheme sanitisation')
 @click.option('--resume', '-r', is_flag=True, 
               help='Resume processing from where it stopped')
 @click.option('--verbose', '-v', is_flag=True, 
@@ -274,12 +274,12 @@ def main(db, exclude, match, scheme_uris, filter, resume, verbose):  # Added sch
             except OSError as e:
                 error(f"Error removing progress file: {e}")
 
-        # After successful fetch, perform sanitisation
+        # After successful fetch, perform scheme sanitisation
         if Path(scheme_uris).exists():
             sanitise_output(output_file, scheme_uris, filter, verbose)
         else:
             error(f"Scheme URIs file not found: {scheme_uris}")
-            error("Skipping sanitisation step")    
+            error("Skipping scheme sanitisation step")    
                     
     except Exception as e:
         error(f"An error occurred: {e}")
@@ -401,8 +401,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         
         # Handle 401 Unauthorized error - try once to refresh token
         if response.status_code == 401:
-            if verbose:
-                info("Invalid session token. Requesting new one...")
+            info("Invalid session token. Requesting new one...")
             
             # Determine which database we're working with
             if url.startswith(BASE_API['pubmlst']):
@@ -458,7 +457,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
                 if verbose:
                     success("New session token obtained and saved")
                 
-                info("\nSession token has been refreshed. Please run the script again.")
+                info("\nSession token has been refreshed. Please run the command again.")
                 sys.exit(0)  # Exit cleanly after token refresh
             else:
                 # If we can't get a new session token, raise the original 401 error
@@ -612,7 +611,7 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
         for entry in sanitised_data:
             outfile.write('\t'.join(str(x) for x in entry) + '\n')
     
-    success(f"Sanitisation complete! Results updated in {output_file}")
+    success(f"Scheme sanitisation complete! Results updated in {output_file}")
       
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
