@@ -35,14 +35,7 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
     This tool downloads MLST scheme information from BIGSdb databases.
     It will automatically handle authentication and save the results.
     """
-    # try:
-    #     # If scheme_uris is not provided, use the package data
-    #     if scheme_uris is None:
-    #         with importlib.resources.path('mlstdb.data', 'scheme_uris.tab') as default_path:
-    #             scheme_uris = str(default_path)
-                
-    # try:
-
+    
     try:
         # If scheme_uris is not provided, use the package data
         if scheme_uris is None:
@@ -89,8 +82,8 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
         session_token = config[db]["token"]
         session_secret = config[db]["secret"]
 
-        output_file = f"mlst_schemes_{db}.txt"
-        processed_file = f"processed_dbs_{db}.txt"
+        output_file = f"mlst_schemes_{db}.tab"
+        processed_file = f"processed_dbs_{db}.tab"
 
         if not resume:
             clear_file(output_file)
@@ -138,12 +131,12 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
             except OSError as e:
                 error(f"Error removing progress file: {e}")
 
-        # After successful fetch, perform sanitisation
+        # After successful fetch, perform scheme sanitisation
         if Path(scheme_uris).exists():
             sanitise_output(output_file, scheme_uris, filter, verbose)
         else:
             error(f"Scheme URIs file not found: {scheme_uris}")
-            error("Skipping sanitisation step")
+            error("Skipping scheme sanitisation step")
 
         success("Fetch completed successfully!")
 
