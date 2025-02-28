@@ -10,13 +10,14 @@ import sys
 @click.command()
 @click.help_option('-h', '--help')
 @click.option('--input', '-i', required=True, 
-              help='Path to mlst_schemes_<db>.txt containing MLST scheme URLs')
+              help='Path to mlst_schemes_<db>.tab containing MLST scheme URLs')
 @click.option('--directory', '-d', default='pubmlst',
               help='Directory to save the downloaded MLST schemes (default: pubmlst)')
 @click.option('--blast-directory', '-b',
-              help='Directory for BLAST database (default: relative to directory as ../blast)')
+              help='Directory for BLAST database (default: blast)')
 @click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose logging for debugging')
+
 def update(input: str, directory: str, blast_directory: str, verbose: bool):
     """
     Update MLST schemes and create BLAST database.
@@ -32,6 +33,10 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
             lines = f.readlines()
 
         check_dir(directory)
+        
+        # Track credential issues
+        auth_errors = False
+        download_success = False
 
         # Process each scheme
         for line in tqdm(lines, desc="Downloading MLST schemes", unit="scheme"):
@@ -44,34 +49,64 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
             
             try:
                 # Get credentials for the specific database
-                client_key, client_secret = get_client_credentials(database.lower())
-                session_token, session_secret = retrieve_session_token(database.lower())
-
-                if not session_token or not session_secret:
-                    error(f"No valid session token found for {database}. Please run fetch.py first to set up authentication.")
+                try:
+                    client_key, client_secret = get_client_credentials(database.lower())
+                    session_token, session_secret = retrieve_session_token(database.lower())
+                except ValueError as ve:
+                    error(f"Error with credentials for {database}: {ve}")
+                    auth_errors = True
                     continue
 
-                # scheme_dir = Path(directory) / sanitise_name(scheme)
+                if not session_token or not session_secret:
+                    error(f"No valid session token found for {database}.")
+                    auth_errors = True
+                    continue
+
                 scheme_dir = Path(directory) / scheme
                 check_dir(str(scheme_dir))
 
-                get_mlst_files(url, str(scheme_dir), client_key, client_secret,
-                             session_token, session_secret, scheme,
-                             verbose=verbose)
-                success(f"Successfully downloaded scheme: {scheme}")
-
+                try:
+                    get_mlst_files(url, str(scheme_dir), client_key, client_secret,
+                                session_token, session_secret, scheme,
+                                verbose=verbose)
+                    success(f"Successfully downloaded scheme: {scheme}")
+                    download_success = True
+                except Exception as e:
+                    # Check for 401/403 errors specifically
+                    if '401 Client Error: Unauthorized' in str(e) or '403 Client Error: Forbidden' in str(e):
+                        error(f"Authentication error for {scheme}: {e}")
+                        auth_errors = True
+                    else:
+                        error(f"Error downloading scheme {scheme}: {e}")
+                    continue
+            
             except Exception as e:
                 error(f"Error downloading scheme {scheme}: {e}")
-                if verbose:
-                    import traceback
-                    error(traceback.format_exc())
                 continue
+        
+        # Exit early if we have authentication errors
+        if auth_errors:
+            error("\nAuthentication errors occurred during downloads.")
+            info("\nTo fix authentication issues:")
+            info("1. Run 'mlstdb fetch' to refresh or setup your credentials")
+            info("2. Then run this command again")
+            sys.exit(1)
+
+        # Check if we have any schemes downloaded
+        scheme_dirs = [d for d in Path(directory).iterdir() if d.is_dir()]
+        if not scheme_dirs:
+            error("\nNo schemes were successfully downloaded. BLAST database creation skipped.")
+            sys.exit(1)
 
         # Create BLAST database after all schemes are downloaded
         info("\nCreating BLAST database from downloaded MLST schemes...")
         create_blast_db(directory, blast_directory, verbose)
         success("Update completed successfully!")
 
+    except FileNotFoundError:
+        error(f"Input file not found: {input}")
+        info("Please run 'mlstdb fetch' first to generate the scheme list file.")
+        sys.exit(1)
     except Exception as e:
         error(f"An error occurred: {e}")
         if verbose:

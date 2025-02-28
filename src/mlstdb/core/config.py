@@ -2,12 +2,6 @@ from pathlib import Path
 import os
 from typing import Dict
 
-# # Constants
-# BASE_WEB: Dict[str, str] = {
-#     "pubmlst": "https://pubmlst.org/bigsdb",
-#     "pasteur": "https://bigsdb.pasteur.fr/cgi-bin/bigsdb/bigsdb.pl",
-# }
-
 # Constants
 BASE_WEB = {
     "pubmlst": "https://pubmlst.org/bigsdb",

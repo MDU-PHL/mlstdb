@@ -1,0 +1,166 @@
+database	species	scheme_description	scheme	URI
+pubmlst	Achromobacter spp.	MLST	achromobacter	https://rest.pubmlst.org/db/pubmlst_achromobacter_seqdef/schemes/1
+pubmlst	Acinetobacter baumannii	MLST (Oxford)	abaumannii	https://rest.pubmlst.org/db/pubmlst_abaumannii_seqdef/schemes/1
+pubmlst	Acinetobacter baumannii	MLST (Pasteur)	abaumannii_2	https://rest.pubmlst.org/db/pubmlst_abaumannii_seqdef/schemes/2
+pubmlst	Aeromonas spp.	MLST	aeromonas	https://rest.pubmlst.org/db/pubmlst_aeromonas_seqdef/schemes/1
+pubmlst	Aggregatibacter actinomycetemcomitans	MLST	aactinomycetemcomitans	https://rest.pubmlst.org/db/pubmlst_aactinomycetemcomitans_seqdef/schemes/1
+pubmlst	Anaplasma phagocytophilum	MLST	aphagocytophilum	https://rest.pubmlst.org/db/pubmlst_aphagocytophilum_seqdef/schemes/1
+pubmlst	Arcobacter spp.	MLST	arcobacter	https://rest.pubmlst.org/db/pubmlst_arcobacter_seqdef/schemes/1
+pubmlst	Avibacterium paragallinarum	MLST	aparagallinarum	https://rest.pubmlst.org/db/pubmlst_aparagallinarum_seqdef/schemes/1
+pubmlst	Bacillus cereus	MLST	bcereus	https://rest.pubmlst.org/db/pubmlst_bcereus_seqdef/schemes/1
+pubmlst	Bacillus licheniformis	MLST	blicheniformis_14	https://rest.pubmlst.org/db/pubmlst_blicheniformis_seqdef/schemes/14
+pubmlst	Bacillus subtilis	MLST	bsubtilis	https://rest.pubmlst.org/db/pubmlst_bsubtilis_seqdef/schemes/1
+pubmlst	Lactococcus lactis 936-like bacteriophage	MLST	llactis_phage	https://rest.pubmlst.org/db/pubmlst_llactis_phage_seqdef/schemes/1
+pubmlst	Bacteroides fragilis	MLST	bfragilis	https://rest.pubmlst.org/db/pubmlst_bfragilis_seqdef/schemes/1
+pubmlst	Bartonella bacilliformis	MLST	bbacilliformis	https://rest.pubmlst.org/db/pubmlst_bbacilliformis_seqdef/schemes/1
+pubmlst	Bartonella henselae	MLST	bhenselae	https://rest.pubmlst.org/db/pubmlst_bhenselae_seqdef/schemes/1
+pubmlst	Bartonella washoensis	MLST	bwashoensis	https://rest.pubmlst.org/db/pubmlst_bwashoensis_seqdef/schemes/1
+pubmlst	Borrelia spp.	MLST	borrelia	https://rest.pubmlst.org/db/pubmlst_borrelia_seqdef/schemes/1
+pubmlst	Brachyspira spp.	B. hampsonii MLST	brachyspira_5	https://rest.pubmlst.org/db/pubmlst_brachyspira_seqdef/schemes/5
+pubmlst	Brachyspira spp.	B. hyodysenteriae MLST	brachyspira_2	https://rest.pubmlst.org/db/pubmlst_brachyspira_seqdef/schemes/2
+pubmlst	Brachyspira spp.	B. intermedia MLST	brachyspira_3	https://rest.pubmlst.org/db/pubmlst_brachyspira_seqdef/schemes/3
+pubmlst	Brachyspira spp.	B. pilosicoli MLST	brachyspira_4	https://rest.pubmlst.org/db/pubmlst_brachyspira_seqdef/schemes/4
+pubmlst	Brachyspira spp.	Brachyspira MLST	brachyspira	https://rest.pubmlst.org/db/pubmlst_brachyspira_seqdef/schemes/1
+pubmlst	Brucella spp.	MLST (9 locus)	brucella	https://rest.pubmlst.org/db/pubmlst_brucella_seqdef/schemes/1
+pubmlst	Burkholderia cepacia complex	MLST	bcc	https://rest.pubmlst.org/db/pubmlst_bcc_seqdef/schemes/1
+pubmlst	Burkholderia pseudomallei	MLST	bpseudomallei	https://rest.pubmlst.org/db/pubmlst_bpseudomallei_seqdef/schemes/1
+pubmlst	Campylobacter non-jejuni/coli	C. concisus/curvus MLST	campylobacter_nonjejuni_5	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/5
+pubmlst	Campylobacter non-jejuni/coli	C. fetus MLST	campylobacter_nonjejuni_9	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/9
+pubmlst	Campylobacter non-jejuni/coli	C. helveticus MLST	campylobacter_nonjejuni	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/1
+pubmlst	Campylobacter non-jejuni/coli	C. hyointestinalis MLST	campylobacter_nonjejuni_6	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/6
+pubmlst	Campylobacter non-jejuni/coli	C. insulaenigrae MLST	campylobacter_nonjejuni_2	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/2
+pubmlst	Campylobacter non-jejuni/coli	C. lanienae MLST	campylobacter_nonjejuni_7	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/7
+pubmlst	Campylobacter non-jejuni/coli	C. lari MLST	campylobacter_nonjejuni_3	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/3
+pubmlst	Campylobacter non-jejuni/coli	C. sputorum MLST	campylobacter_nonjejuni_8	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/8
+pubmlst	Campylobacter non-jejuni/coli	C. upsaliensis MLST	campylobacter_nonjejuni_4	https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/4
+pubmlst	Campylobacter jejuni/coli	MLST	campylobacter	https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/schemes/1
+pubmlst	Carnobacterium maltaromaticum	MLST	cmaltaromaticum	https://rest.pubmlst.org/db/pubmlst_cmaltaromaticum_seqdef/schemes/1
+pubmlst	Chlamydiales spp.	MLST (Chlamydiales)	chlamydiales	https://rest.pubmlst.org/db/pubmlst_chlamydiales_seqdef/schemes/1
+pubmlst	Chlamydiales spp.	MLST (C. trachomatis)	chlamydiales_38	https://rest.pubmlst.org/db/pubmlst_chlamydiales_seqdef/schemes/38
+pubmlst	Citrobacter spp.	MLST	cfreundii	https://rest.pubmlst.org/db/pubmlst_cfreundii_seqdef/schemes/1
+pubmlst	Clostridioides difficile	MLST	cdifficile	https://rest.pubmlst.org/db/pubmlst_cdifficile_seqdef/schemes/1
+pubmlst	Clostridium botulinum	MLST	cbotulinum	https://rest.pubmlst.org/db/pubmlst_cbotulinum_seqdef/schemes/1
+pubmlst	Clostridium perfringens	MLST	cperfringens	https://rest.pubmlst.org/db/pubmlst_cperfringens_seqdef/schemes/1
+pubmlst	Clostridium septicum	MLST	csepticum	https://rest.pubmlst.org/db/pubmlst_csepticum_seqdef/schemes/1
+pubmlst	Cronobacter spp.	MLST	cronobacter	https://rest.pubmlst.org/db/pubmlst_cronobacter_seqdef/schemes/1
+pubmlst	Cutibacterium acnes	MLST	pacnes_3	https://rest.pubmlst.org/db/pubmlst_pacnes_seqdef/schemes/3
+pubmlst	Dichelobacter nodosus	MLST	dnodosus	https://rest.pubmlst.org/db/pubmlst_dnodosus_seqdef/schemes/1
+pubmlst	Edwardsiella spp.	MLST	edwardsiella	https://rest.pubmlst.org/db/pubmlst_edwardsiella_seqdef/schemes/1
+pubmlst	Enterobacter cloacae	MLST	ecloacae	https://rest.pubmlst.org/db/pubmlst_ecloacae_seqdef/schemes/1
+pubmlst	Enterococcus faecalis	MLST	efaecalis	https://rest.pubmlst.org/db/pubmlst_efaecalis_seqdef/schemes/1
+pubmlst	Enterococcus faecium	MLST	efaecium	https://rest.pubmlst.org/db/pubmlst_efaecium_seqdef/schemes/1
+pubmlst	Enterococcus faecium	MLST (Bezdíček et al.)	efaecium_2	https://rest.pubmlst.org/db/pubmlst_efaecium_seqdef/schemes/2
+pubmlst	Escherichia spp.	MLST (Achtman)	escherichia	https://rest.pubmlst.org/db/pubmlst_escherichia_seqdef/schemes/1
+pubmlst	Flavobacterium psychrophilum	MLST	fpsychrophilum	https://rest.pubmlst.org/db/pubmlst_fpsychrophilum_seqdef/schemes/1
+pubmlst	Gallibacterium anatis	MLST	gallibacterium	https://rest.pubmlst.org/db/pubmlst_gallibacterium_seqdef/schemes/1
+pubmlst	Geotrichum spp.	MLST	geotrichum	https://rest.pubmlst.org/db/pubmlst_geotrichum_seqdef/schemes/1
+pubmlst	Glaesserella parasuis	MLST	hparasuis	https://rest.pubmlst.org/db/pubmlst_hparasuis_seqdef/schemes/1
+pubmlst	Haemophilus influenzae	MLST	hinfluenzae	https://rest.pubmlst.org/db/pubmlst_hinfluenzae_seqdef/schemes/1
+pubmlst	Helicobacter cinaedi	MLST	hcinaedi	https://rest.pubmlst.org/db/pubmlst_hcinaedi_seqdef/schemes/1
+pubmlst	Helicobacter pylori	MLST	helicobacter	https://rest.pubmlst.org/db/pubmlst_helicobacter_seqdef/schemes/1
+pubmlst	Helicobacter suis	MLST	hsuis	https://rest.pubmlst.org/db/pubmlst_hsuis_seqdef/schemes/1
+pubmlst	Klebsiella aerogenes	MLST	kaerogenes	https://rest.pubmlst.org/db/pubmlst_kaerogenes_seqdef/schemes/1
+pubmlst	Klebsiella oxytoca	MLST	koxytoca	https://rest.pubmlst.org/db/pubmlst_koxytoca_seqdef/schemes/1
+pubmlst	Lactobacillus salivarius	MLST	lsalivarius	https://rest.pubmlst.org/db/pubmlst_lsalivarius_seqdef/schemes/1
+pubmlst	Lactococcus garvieae	MLST	lgarvieae	https://rest.pubmlst.org/db/pubmlst_lgarvieae_seqdef/schemes/1
+pubmlst	Leptospira spp.	MLST (scheme 1)	leptospira	https://rest.pubmlst.org/db/pubmlst_leptospira_seqdef/schemes/1
+pubmlst	Leptospira spp.	MLST (scheme 2)	leptospira_2	https://rest.pubmlst.org/db/pubmlst_leptospira_seqdef/schemes/2
+pubmlst	Leptospira spp.	MLST (scheme 3)	leptospira_3	https://rest.pubmlst.org/db/pubmlst_leptospira_seqdef/schemes/3
+pubmlst	Candidatus Liberibacter solanacearum	MLST	liberibacter	https://rest.pubmlst.org/db/pubmlst_liberibacter_seqdef/schemes/1
+pubmlst	Macrococcus canis	MLST	mcanis	https://rest.pubmlst.org/db/pubmlst_mcanis_seqdef/schemes/1
+pubmlst	Macrococcus caseolyticus	MLST	mcaseolyticus	https://rest.pubmlst.org/db/pubmlst_mcaseolyticus_seqdef/schemes/1
+pubmlst	Mammaliicoccus sciuri	MLST	msciuri	https://rest.pubmlst.org/db/pubmlst_msciuri_seqdef/schemes/1
+pubmlst	Mannheimia haemolytica	MLST	mhaemolytica	https://rest.pubmlst.org/db/pubmlst_mhaemolytica_seqdef/schemes/1
+pubmlst	Melissococcus plutonius	MLST	mplutonius	https://rest.pubmlst.org/db/pubmlst_mplutonius_seqdef/schemes/1
+pubmlst	Mycobacteria spp.	MLST	mycobacteria_2	https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2
+pubmlst	Mycobacteroides abscessus complex	MLST	mabscessus	https://rest.pubmlst.org/db/pubmlst_mabscessus_seqdef/schemes/1
+pubmlst	Mycoplasma agalactiae	MLST	magalactiae	https://rest.pubmlst.org/db/pubmlst_magalactiae_seqdef/schemes/1
+pubmlst	Mycoplasma anserisalpingitidis	MLST	manserisalpingitidis	https://rest.pubmlst.org/db/pubmlst_manserisalpingitidis_seqdef/schemes/1
+pubmlst	Mycoplasma bovis	MLST	mbovis_2	https://rest.pubmlst.org/db/pubmlst_mbovis_seqdef/schemes/2
+pubmlst	Mycoplasma bovis	MLST (legacy)	mbovis	https://rest.pubmlst.org/db/pubmlst_mbovis_seqdef/schemes/1
+pubmlst	Mycoplasma flocculare	MLST	mflocculare	https://rest.pubmlst.org/db/pubmlst_mflocculare_seqdef/schemes/1
+pubmlst	Mycoplasma gallisepticum	MLST#1 (Ghanem)	mgallisepticum	https://rest.pubmlst.org/db/pubmlst_mgallisepticum_seqdef/schemes/1
+pubmlst	Mycoplasma gallisepticum	MLST#2 (Bekő)	mgallisepticum_2	https://rest.pubmlst.org/db/pubmlst_mgallisepticum_seqdef/schemes/2
+pubmlst	Mycoplasma genitalium	MLST	mgenitalium_2	https://rest.pubmlst.org/db/pubmlst_mgenitalium_seqdef/schemes/2
+pubmlst	Mycoplasma hominis	MLST	mhominis	https://rest.pubmlst.org/db/pubmlst_mhominis_seqdef/schemes/1
+pubmlst	Mycoplasma hominis	eMLST	mhominis_3	https://rest.pubmlst.org/db/pubmlst_mhominis_seqdef/schemes/3
+pubmlst	Mycoplasma hyopneumoniae	MLST	mhyopneumoniae	https://rest.pubmlst.org/db/pubmlst_mhyopneumoniae_seqdef/schemes/1
+pubmlst	Mycoplasma hyorhinis	MLST	mhyorhinis	https://rest.pubmlst.org/db/pubmlst_mhyorhinis_seqdef/schemes/1
+pubmlst	Mycoplasma hyosynoviae	MLST	mhyosynoviae	https://rest.pubmlst.org/db/pubmlst_mhyosynoviae_seqdef/schemes/1
+pubmlst	Mycoplasma iowae	MLST	miowae	https://rest.pubmlst.org/db/pubmlst_miowae_seqdef/schemes/1
+pubmlst	Mycoplasma pneumoniae	MLST	mpneumoniae	https://rest.pubmlst.org/db/pubmlst_mpneumoniae_seqdef/schemes/1
+pubmlst	Mycoplasma synoviae	MLST	msynoviae	https://rest.pubmlst.org/db/pubmlst_msynoviae_seqdef/schemes/1
+pubmlst	Neisseria spp.	MLST	neisseria	https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/1
+pubmlst	Orientia tsutsugamushi	MLST	otsutsugamushi	https://rest.pubmlst.org/db/pubmlst_otsutsugamushi_seqdef/schemes/1
+pubmlst	Ornithobacterium rhinotracheale	MLST	orhinotracheale	https://rest.pubmlst.org/db/pubmlst_orhinotracheale_seqdef/schemes/1
+pubmlst	Paenibacillus larvae	MLST	plarvae	https://rest.pubmlst.org/db/pubmlst_plarvae_seqdef/schemes/1
+pubmlst	Pasteurella multocida	Multiple host MLST	pmultocida	https://rest.pubmlst.org/db/pubmlst_pmultocida_seqdef/schemes/1
+pubmlst	Pasteurella multocida	RIRDC MLST	pmultocida_2	https://rest.pubmlst.org/db/pubmlst_pmultocida_seqdef/schemes/2
+pubmlst	Pediococcus pentosaceus	MLST	ppentosaceus	https://rest.pubmlst.org/db/pubmlst_ppentosaceus_seqdef/schemes/1
+pubmlst	Photobacterium damselae	MLST	pdamselae	https://rest.pubmlst.org/db/pubmlst_pdamselae_seqdef/schemes/1
+pubmlst	Piscirickettsia salmonis	MLST	psalmonis	https://rest.pubmlst.org/db/pubmlst_psalmonis_seqdef/schemes/1
+pubmlst	Porphyromonas gingivalis	MLST	pgingivalis	https://rest.pubmlst.org/db/pubmlst_pgingivalis_seqdef/schemes/1
+pubmlst	Proteus spp.	MLST	proteus	https://rest.pubmlst.org/db/pubmlst_proteus_seqdef/schemes/1
+pubmlst	Pseudomonas aeruginosa	MLST	paeruginosa	https://rest.pubmlst.org/db/pubmlst_paeruginosa_seqdef/schemes/1
+pubmlst	Pseudomonas fluorescens	MLST	pfluorescens	https://rest.pubmlst.org/db/pubmlst_pfluorescens_seqdef/schemes/1
+pubmlst	Pseudomonas putida	MLST	pputida	https://rest.pubmlst.org/db/pubmlst_pputida_seqdef/schemes/1
+pubmlst	Riemerella anatipestifer	MLST	ranatipestifer	https://rest.pubmlst.org/db/pubmlst_ranatipestifer_seqdef/schemes/1
+pubmlst	Rhodococcus spp.	MLST	rhodococcus	https://rest.pubmlst.org/db/pubmlst_rhodococcus_seqdef/schemes/1
+pubmlst	Salmonella spp.	MLST	salmonella_2	https://rest.pubmlst.org/db/pubmlst_salmonella_seqdef/schemes/2
+pubmlst	Serratia spp.	MLST	serratia	https://rest.pubmlst.org/db/pubmlst_serratia_seqdef/schemes/1
+pubmlst	Shewanella spp.	MLST	shewanella	https://rest.pubmlst.org/db/pubmlst_shewanella_seqdef/schemes/1
+pubmlst	Sinorhizobium spp.	MLST	sinorhizobium	https://rest.pubmlst.org/db/pubmlst_sinorhizobium_seqdef/schemes/1
+pubmlst	Stenotrophomonas maltophilia	MLST	smaltophilia	https://rest.pubmlst.org/db/pubmlst_smaltophilia_seqdef/schemes/1
+pubmlst	Staphylococcus aureus	MLST	saureus	https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/schemes/1
+pubmlst	Staphylococcus chromogenes	MLST	schromogenes	https://rest.pubmlst.org/db/pubmlst_schromogenes_seqdef/schemes/1
+pubmlst	Staphylococcus epidermidis	MLST	sepidermidis	https://rest.pubmlst.org/db/pubmlst_sepidermidis_seqdef/schemes/1
+pubmlst	Staphylococcus haemolyticus	MLST	shaemolyticus	https://rest.pubmlst.org/db/pubmlst_shaemolyticus_seqdef/schemes/1
+pubmlst	Staphylococcus hominis	MLST	shominis	https://rest.pubmlst.org/db/pubmlst_shominis_seqdef/schemes/1
+pubmlst	Staphylococcus pseudintermedius	MLST	spseudintermedius	https://rest.pubmlst.org/db/pubmlst_spseudintermedius_seqdef/schemes/1
+pubmlst	Oral Streptococcus spp.	S. mutans MLST (Do)	oralstrep_2	https://rest.pubmlst.org/db/pubmlst_oralstrep_seqdef/schemes/2
+pubmlst	Oral Streptococcus spp.	S. mutans MLST (Nakano)	oralstrep_3	https://rest.pubmlst.org/db/pubmlst_oralstrep_seqdef/schemes/3
+pubmlst	Oral Streptococcus spp.	S. oralis MLST	oralstrep	https://rest.pubmlst.org/db/pubmlst_oralstrep_seqdef/schemes/1
+pubmlst	Streptococcus agalactiae	MLST	sagalactiae	https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/schemes/1
+pubmlst	Streptococcus bovis/equinus complex (SBSEC)	MLST	sbsec	https://rest.pubmlst.org/db/pubmlst_sbsec_seqdef/schemes/1
+pubmlst	Streptococcus canis	MLST	scanis	https://rest.pubmlst.org/db/pubmlst_scanis_seqdef/schemes/1
+pubmlst	Streptococcus dysgalactiae	MLST	sdysgalactiae	https://rest.pubmlst.org/db/pubmlst_sdysgalactiae_seqdef/schemes/1
+pubmlst	Streptococcus gallolyticus	MLST	sgallolyticus	https://rest.pubmlst.org/db/pubmlst_sgallolyticus_seqdef/schemes/1
+pubmlst	Streptococcus iniae	MLST	siniae	https://rest.pubmlst.org/db/pubmlst_siniae_seqdef/schemes/1
+pubmlst	Streptococcus mitis	MLST	smitis	https://rest.pubmlst.org/db/pubmlst_smitis_seqdef/schemes/1
+pubmlst	Streptococcus pneumoniae	MLST	spneumoniae	https://rest.pubmlst.org/db/pubmlst_spneumoniae_seqdef/schemes/1
+pubmlst	Streptococcus pyogenes	MLST	spyogenes	https://rest.pubmlst.org/db/pubmlst_spyogenes_seqdef/schemes/1
+pubmlst	Streptococcus suis	MLST	ssuis	https://rest.pubmlst.org/db/pubmlst_ssuis_seqdef/schemes/1
+pubmlst	Streptococcus thermophilus	MLST	sthermophilus	https://rest.pubmlst.org/db/pubmlst_sthermophilus_seqdef/schemes/1
+pubmlst	Streptococcus uberis	MLST	suberis	https://rest.pubmlst.org/db/pubmlst_suberis_seqdef/schemes/1
+pubmlst	Streptococcus uberis	vMLST	suberis_2	https://rest.pubmlst.org/db/pubmlst_suberis_seqdef/schemes/2
+pubmlst	Streptococcus zooepidemicus	MLST	szooepidemicus	https://rest.pubmlst.org/db/pubmlst_szooepidemicus_seqdef/schemes/1
+pubmlst	Streptomyces spp	MLST	streptomyces	https://rest.pubmlst.org/db/pubmlst_streptomyces_seqdef/schemes/1
+pubmlst	Taylorella spp.	MLST	taylorella	https://rest.pubmlst.org/db/pubmlst_taylorella_seqdef/schemes/1
+pubmlst	Tenacibaculum spp.	MLST	tenacibaculum	https://rest.pubmlst.org/db/pubmlst_tenacibaculum_seqdef/schemes/1
+pubmlst	Treponema pallidum	MLST (Grillová)	tpallidum	https://rest.pubmlst.org/db/pubmlst_tpallidum_seqdef/schemes/1
+pubmlst	Treponema pallidum	MLST (Pla-Díaz)	tpallidum_181	https://rest.pubmlst.org/db/pubmlst_tpallidum_seqdef/schemes/181
+pubmlst	Tricohomas vaginalis	MLST	tvaginalis	https://rest.pubmlst.org/db/pubmlst_tvaginalis_seqdef/schemes/1
+pubmlst	Ureaplasma spp.	MLST	ureaplasma	https://rest.pubmlst.org/db/pubmlst_ureaplasma_seqdef/schemes/1
+pubmlst	Vibrio cholerae	MLST	vcholerae	https://rest.pubmlst.org/db/pubmlst_vcholerae_seqdef/schemes/1
+pubmlst	Vibrio cholerae	MLST (O1 and O139)	vcholerae_2	https://rest.pubmlst.org/db/pubmlst_vcholerae_seqdef/schemes/2
+pubmlst	Vibrio spp.	MLST	vibrio	https://rest.pubmlst.org/db/pubmlst_vibrio_seqdef/schemes/1
+pubmlst	Vibrio parahaemolyticus	MLST	vparahaemolyticus	https://rest.pubmlst.org/db/pubmlst_vparahaemolyticus_seqdef/schemes/1
+pubmlst	Vibrio tapetis	MLST	vtapetis	https://rest.pubmlst.org/db/pubmlst_vtapetis_seqdef/schemes/1
+pubmlst	Vibrio vulnificus	MLST	vvulnificus	https://rest.pubmlst.org/db/pubmlst_vvulnificus_seqdef/schemes/1
+pubmlst	Wolbachia spp.	MLST	wolbachia	https://rest.pubmlst.org/db/pubmlst_wolbachia_seqdef/schemes/1
+pubmlst	Xylella fastidiosa	MLST	xfastidiosa	https://rest.pubmlst.org/db/pubmlst_xfastidiosa_seqdef/schemes/1
+pubmlst	Yersinia ruckeri	MLST	yruckeri	https://rest.pubmlst.org/db/pubmlst_yruckeri_seqdef/schemes/1
+pasteur	Bordetella	MLST	bordetella_3	https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3
+pasteur	Corynebacterium	MLST	diphtheria_3	https://bigsdb.pasteur.fr/api/db/pubmlst_diphtheria_seqdef/schemes/3
+pasteur	REST API access to Klebsiella seqdef database	MLST	klebsiella	https://bigsdb.pasteur.fr/api/db/pubmlst_klebsiella_seqdef/schemes/1
+pasteur	Leptospira	MLST_1	leptospira_4	https://bigsdb.pasteur.fr/api/db/pubmlst_leptospira_seqdef/schemes/4
+pasteur	Leptospira	MLST_2	leptospira_5	https://bigsdb.pasteur.fr/api/db/pubmlst_leptospira_seqdef/schemes/5
+pasteur	Leptospira	MLST_3	leptospira_6	https://bigsdb.pasteur.fr/api/db/pubmlst_leptospira_seqdef/schemes/6
+pasteur	REST API access to Listeria seqdef database	MLST	listeria_2	https://bigsdb.pasteur.fr/api/db/pubmlst_listeria_seqdef/schemes/2
+pubmlst	Mcatarrhalis	MLST	mcatarrhalis_achtman_6	https://rest.pubmlst.org/db/pubmlst_mcatarrhalis_achtman_seqdef/schemes/6
+pasteur	Staphlugdunensis	MLST	staphlugdunensis	https://bigsdb.pasteur.fr/api/db/pubmlst_staphlugdunensis_seqdef/schemes/1
+pasteur	Ecoli	MLST	ecoli	https://bigsdb.pasteur.fr/api/db/pubmlst_ecoli_seqdef/schemes/1
+pasteur	Kingella	MLST	kingella	https://bigsdb.pasteur.fr/api/db/pubmlst_kingella_seqdef/schemes/1
+pasteur	Streptothermophilus	MLST	streptothermophilus	https://bigsdb.pasteur.fr/api/db/pubmlst_streptothermophilus_seqdef/schemes/1
+pubmlst	Senterica	MLST	senterica_achtman_2	https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/schemes/2
+pubmlst	Ypseudotuberculosis	MLST	ypseudotuberculosis_achtman_3	https://rest.pubmlst.org/db/pubmlst_ypseudotuberculosis_achtman_seqdef/schemes/3

@@ -4,38 +4,106 @@ import sys
 import click
 import requests
 import subprocess
+import configparser
 from pathlib import Path
-from typing import Dict, Optional, List
 from tqdm import tqdm
-from rauth import OAuth1Session
-from mlstdb.core.config import get_config_dir, BASE_API
-from mlstdb.core.auth import remove_db_credentials
+from rauth import OAuth1Session, OAuth1Service
+from mlstdb.core.config import get_config_dir, BASE_API, DB_MAPPING
+from mlstdb.core.auth import remove_db_credentials, register_tokens
 from mlstdb.utils import error, success, info
 
 def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
+    """Fetch JSON from URL with OAuth authentication and session token refresh."""
     if verbose:
         print(f"Fetching JSON from {url}")
     
+    # Initialize session with current token
     session = OAuth1Session(
         consumer_key=client_key,
         consumer_secret=client_secret,
         access_token=session_token,
         access_token_secret=session_secret,
     )
-    
     session.headers.update({"User-Agent": "BIGSdb downloader"})
 
     try:
         response = session.get(url)
         if verbose:
             print(f"Response code: {response.status_code}, URL: {url}")
+        
         if response.status_code == 404:
             print(f"Resource not found at URL: {url}")
             return None
+        
+        # Handle 401 Unauthorised error - try once to refresh token
+        if response.status_code == 401:
+            info("Invalid session token. Requesting new one...")
+            
+            # Determine which database we're working with
+            if url.startswith(BASE_API['pubmlst']):
+                db = 'pubmlst'
+            elif url.startswith(BASE_API['pasteur']):
+                db = 'pasteur'
+            else:
+                raise ValueError(f"Unable to determine database from URL: {url}")
+            
+            # Get new session token using existing credentials
+            config = configparser.ConfigParser(interpolation=None)
+            access_tokens_file = get_config_dir() / "access_tokens"
+            
+            # Read access tokens
+            config.read(access_tokens_file)
+            access_token = config[db]["token"]
+            access_secret = config[db]["secret"]
+            
+            # Initialize OAuth service
+            service = OAuth1Service(
+                name="BIGSdb_downloader",
+                consumer_key=client_key,
+                consumer_secret=client_secret,
+                request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
+                access_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_access_token",
+                base_url=BASE_API[db],
+            )
+            
+            # Get new session token
+            url_session = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_session_token"
+            session_request = OAuth1Session(
+                client_key,
+                client_secret,
+                access_token=access_token,
+                access_token_secret=access_secret,
+            )
+            session_request.headers.update({"User-Agent": "BIGSdb downloader"})
+            
+            r = session_request.get(url_session)
+            if r.status_code == 200:
+                new_token = r.json()["oauth_token"]
+                new_secret = r.json()["oauth_token_secret"]
+                
+                # Save new session token
+                config = configparser.ConfigParser(interpolation=None)
+                session_tokens_file = get_config_dir() / "session_tokens"
+                if session_tokens_file.exists():
+                    config.read(session_tokens_file)
+                config[db] = {"token": new_token, "secret": new_secret}
+                with open(session_tokens_file, "w") as configfile:
+                    config.write(configfile)
+                
+                if verbose:
+                    success("New session token obtained and saved")
+                
+                info("\nSession token has been refreshed. Please run the command again.")
+                sys.exit(0)  # Exit cleanly after token refresh
+            else:
+                # If we can't get a new session token, raise the original 401 error
+                response.raise_for_status()
+        
         response.raise_for_status()
         return response.json()
+        
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:  # Handle both 401 and 403
+        if e.response.status_code in [401, 403]:  # Only handle other 401/403 cases
             config_dir = get_config_dir()
             
             error(f"\nAuthentication Failed! (Status code: {e.response.status_code})")
@@ -64,7 +132,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
                         db = 'pasteur'
                     remove_db_credentials(config_dir, db)
                     info("\nCredentials deleted successfully.")
-                    info("Please run the script again to generate new credentials.")
+                    info("Please run the command again to generate new credentials.")
                     sys.exit(1)
                 except Exception as del_error:
                     error(f"Failed to delete credentials: {del_error}")
@@ -72,7 +140,9 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             
             error("Exiting. Please fix credentials and try again")
             sys.exit(1)
+
         raise
+
 
 def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str, 
                    session_token: str, session_secret: str, scheme_name: str, 
@@ -91,7 +161,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)
+        response = session.get(url)    
         response.raise_for_status()
         mlst_scheme = response.json()
         
@@ -126,12 +196,32 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
             
+        # Handle expired token (401)
+        if response.status_code == 401:
+            if verbose:
+                info("Session token expired, attempting to refresh...")
+            # Get database type from URL    
+            db = 'pubmlst' if 'pubmlst.org' in url else 'pasteur'
+            
+            # Register new tokens
+            new_token, new_secret = register_tokens(db)
+            
+            # Retry with new token
+            session = OAuth1Session(
+                consumer_key=client_key,
+                consumer_secret=client_secret,
+                access_token=new_token,
+                access_token_secret=new_secret,
+            )
+            session.headers.update({"User-Agent": "BIGSdb downloader"})
+            response = session.get(url)
+                
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:
-            error("\nAuthentication failed!")
-            info("\nTo fix authentication issues:")
-            info("1. Run 'fetch.py' to refresh your credentials")
-            info("2. Try running this script again")
+        if e.response.status_code == 403:
+            error("\nAuthentication failed - permission denied!")
+            info("\nTo fix permission issues:")
+            info("Run 'mlstdb fetch' to refresh your credentials for the database you are trying to access.")
+            info("Then try running this script again.")
             sys.exit(1)
         elif e.response.status_code == 404:
             error(f"Resource not found at URL: {url}")
@@ -204,7 +294,7 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
     sanitised_data = []
     existing_schemes = set()
 
-    info(f"Sanitising output file: {output_file}")
+    info(f"Sanitising schemes of the output file: {output_file}")
     
     # Read and process the file
     with open(output_file, 'r') as infile:
@@ -264,7 +354,7 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
         for entry in sanitised_data:
             outfile.write('\t'.join(str(x) for x in entry) + '\n')
     
-    success(f"Sanitisation complete! Results updated in {output_file}")
+    success(f"Scheme sanitisation complete! Results updated in {output_file}")
 
 
 def get_matching_schemes(db, match, exclude, client_key, client_secret, 
@@ -299,12 +389,13 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
         
         schemes = fetch_json(db_attributes['schemes'], client_key, client_secret, 
                            session_token, session_secret, verbose=verbose)
-        
-        # Get database type from output filename
-        db_type = output_file.split('_')[-1].replace('.txt', '')
-        
+             
         if schemes and 'schemes' in schemes:
             matching_schemes = []
+            
+            # Determine database type from URL instead of filename
+            db_type = "pasteur" if "pasteur.fr" in db['href'] else "pubmlst"
+
             for scheme in schemes['schemes']:
                 if match and not re.search(match, scheme['description'], flags=0):
                     continue
