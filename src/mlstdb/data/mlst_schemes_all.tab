@@ -132,13 +132,11 @@ pubmlst	Streptococcus pyogenes	MLST	spyogenes	https://rest.pubmlst.org/db/pubmls
 pubmlst	Streptococcus suis	MLST	ssuis	https://rest.pubmlst.org/db/pubmlst_ssuis_seqdef/schemes/1
 pubmlst	Streptococcus thermophilus	MLST	sthermophilus	https://rest.pubmlst.org/db/pubmlst_sthermophilus_seqdef/schemes/1
 pubmlst	Streptococcus uberis	MLST	suberis	https://rest.pubmlst.org/db/pubmlst_suberis_seqdef/schemes/1
-pubmlst	Streptococcus uberis	vMLST	suberis_2	https://rest.pubmlst.org/db/pubmlst_suberis_seqdef/schemes/2
 pubmlst	Streptococcus zooepidemicus	MLST	szooepidemicus	https://rest.pubmlst.org/db/pubmlst_szooepidemicus_seqdef/schemes/1
 pubmlst	Streptomyces spp	MLST	streptomyces	https://rest.pubmlst.org/db/pubmlst_streptomyces_seqdef/schemes/1
 pubmlst	Taylorella spp.	MLST	taylorella	https://rest.pubmlst.org/db/pubmlst_taylorella_seqdef/schemes/1
 pubmlst	Tenacibaculum spp.	MLST	tenacibaculum	https://rest.pubmlst.org/db/pubmlst_tenacibaculum_seqdef/schemes/1
 pubmlst	Treponema pallidum	MLST (Grillová)	tpallidum	https://rest.pubmlst.org/db/pubmlst_tpallidum_seqdef/schemes/1
-pubmlst	Treponema pallidum	MLST (Pla-Díaz)	tpallidum_181	https://rest.pubmlst.org/db/pubmlst_tpallidum_seqdef/schemes/181
 pubmlst	Tricohomas vaginalis	MLST	tvaginalis	https://rest.pubmlst.org/db/pubmlst_tvaginalis_seqdef/schemes/1
 pubmlst	Ureaplasma spp.	MLST	ureaplasma	https://rest.pubmlst.org/db/pubmlst_ureaplasma_seqdef/schemes/1
 pubmlst	Vibrio cholerae	MLST	vcholerae	https://rest.pubmlst.org/db/pubmlst_vcholerae_seqdef/schemes/1
