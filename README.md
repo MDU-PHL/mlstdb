@@ -27,18 +27,18 @@ Should install `mlst` for the use of this tool.
 ## Installation
 
 From bioconda: 
-```console
+```sh
 conda install -c bioconda mlstdb
 ```
 
 From PyPI:
-```console
+```sh
 pip install mlstdb
 ```
 
 Recommended way to install is from bioconda with `mlst` tool. 
 
-```console
+```sh
 conda create -n mlst -c bioconda mlst mlstdb
 ```
 
@@ -48,7 +48,7 @@ conda create -n mlst -c bioconda mlst mlstdb
 
 1. **Fetch MLST schemes**
 
-```console
+```sh
 mlstdb fetch --help
 ```
 
@@ -76,9 +76,9 @@ Options:
 
 Use the `fetch` command to download MLST schemes from the BIGSdb databases. The `--db` argument specifies the database to use, which can be either `pubmlst` or `pasteur`. The `--exclude` and `--match` arguments can be used to filter the schemes based on the scheme name. The `--scheme-uris` argument can be used to provide a custom scheme URIs file. The `--filter` argument can be used to filter species or schemes using a wildcard pattern. The `--resume` flag can be used to resume processing from where it stopped. The `--verbose` flag can be used to enable verbose logging for debugging. This will create a `mlst_schemes_<db>.txt` file with the MLST schemes.
 
-We can just use `mlstdb fetch` to download the MLST schemes from the BIGSdb databases. If the registration is not done, it will prompt the user to register the client credentials. This will save the client credentials to the `~/.config/mlstdb` directory.
+We can just use `mlstdb fetch` to download the MLST schemes from the BIGSdb databases. The command will prompt for the `db` (either `pubmlst` or `pasteur`) to fetch. If the registration is not done, it will prompt the user to register the client credentials. This will save the client credentials to the `~/.config/mlstdb` directory.
 
-In cases where the tool does not find an appropriate scheme name, it will prompt the user to either set the missing schemes as 'missing' or auto-generate them. The user can choose the appropriate option.
+In cases where the tool does not find an appropriate scheme name, it will prompt the user to either set the missing schemes as 'missing' or auto-generate them. The user can choose the appropriate option as they are prompted.
 
 <details>
 <summary>Auto extraction of scheme?🤔</summary>
@@ -95,7 +95,7 @@ The script offers feature to filter for particular species/schemes. It is recomm
 
 2. **Update MLST database**
 
-```console
+```sh
 mlstdb update --help
 ```
 
@@ -110,18 +110,18 @@ Usage: mlstdb update [OPTIONS]
 
 Options:
   -h, --help                  Show this message and exit.
-  -i, --input TEXT            Path to mlst_schemes_<db>.txt containing MLST
+  -i, --input TEXT            Path to mlst_schemes_<db>.tab containing MLST
                               scheme URLs  [required]
   -d, --directory TEXT        Directory to save the downloaded MLST schemes
                               (default: pubmlst)
-  -b, --blast-directory TEXT  Directory for BLAST database (default: relative
-                              to directory as ../blast)
+  -b, --blast-directory TEXT  Directory for BLAST database (default: blast)
   -v, --verbose               Enable verbose logging for debugging
 ```
 
-Use the `update` command to update the MLST database and create a BLAST database. The `--input` argument specifies the path to the `mlst_schemes_<db>.txt` file containing MLST scheme URLs. The `--directory` argument specifies the directory to save the downloaded MLST schemes. The `--blast-directory` argument specifies the directory for the BLAST database. The `--verbose` flag can be used to enable verbose logging for debugging.
+Use the `update` command to update the MLST database and create a BLAST database. The `--input` argument specifies the path to the `mlst_schemes_<db>.tab` file containing MLST scheme URLs. The `--directory` argument specifies the directory to save the downloaded MLST schemes. The `--blast-directory` argument specifies the directory for the BLAST database. The `--verbose` flag can be used to enable verbose logging for debugging.
 
-We can prepare a custom `mlst_schemes_<db>.txt` file and use `mlstdb update` to update the MLST database for select species and schemes. This will automatically create a BLAST database from the downloaded sequences.
+We can prepare a custom `mlst_schemes_<db>.tab` file with headers `database	species	scheme_description	scheme	URI`
+and use `mlstdb update` to update the MLST database for select species and schemes. This will automatically create a BLAST database from the downloaded sequences.
 
 ## Final Steps
 After running all scripts, verify the database setup by running the `mlst` tool with the updated database:
