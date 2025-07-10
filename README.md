@@ -16,7 +16,7 @@
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-  - [Disclaimer / Caution](#Disclaimer-/-Caution)
+  - [Disclaimer / Caution](#%EF%B8%8F-disclaimer--caution)
   - [Usage](#usage)
   - [Final Steps](#final-steps)
   - [License](#license)
