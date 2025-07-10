@@ -16,6 +16,7 @@
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+  - [Disclaimer / Caution](#Disclaimer-/-Caution)
   - [Usage](#usage)
   - [Final Steps](#final-steps)
   - [License](#license)
@@ -41,6 +42,15 @@ Recommended way to install is from bioconda with `mlst` tool.
 ```sh
 conda create -n mlst -c bioconda mlst mlstdb
 ```
+
+## ⚠️ Disclaimer / Caution
+Please read before using `mlstdb`:
+
+* Backup your original MLST databases before running any updates to avoid accidental overwrites or deletions.
+
+* Do not blindly update all the schemes obtained from `mlstdb fetch`. Not all downloaded schemes are suitable or validated for the `mlst` tool.
+
+* Carefully curate your list of schemes before running `mlstdb update`. Overwriting core MLST data with unverified schemes may cause downstream issues with tools like mlst.
 
 ## Usage
 
