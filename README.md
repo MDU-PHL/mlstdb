@@ -50,7 +50,7 @@ Please read before using `mlstdb`:
 
 * Do not blindly update all the schemes obtained from `mlstdb fetch`. Not all downloaded schemes are suitable or validated for the `mlst` tool.
 
-* Carefully curate your list of schemes before running `mlstdb update`. Overwriting core MLST data with unverified schemes may cause downstream issues with tools like mlst.
+* Carefully curate your list of schemes before running `mlstdb update`. Overwriting core MLST data with unverified schemes may cause downstream issues with tools like `mlst`.
 
 ## Usage
 
