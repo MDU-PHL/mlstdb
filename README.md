@@ -132,7 +132,6 @@ mlst --blastdb <path_to_blast/mlst.fa> --datadir <path_to_pubmlst_dir>
 
 ## License
 
-`mlstdb` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
-
+`mlstdb` was previously licensed under MIT. As of version X.X FLAG:, it is licensed under GPL v3. Original MIT‑licensed code is preserved and attributed according to MIT terms.
 
 For additional support, please raise an issue.

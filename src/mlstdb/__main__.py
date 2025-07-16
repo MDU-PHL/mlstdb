@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025-present Himal Shrestha <stha.himal2007@gmail.com>
 #
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: GPL-3.0-or-later
 from mlstdb.cli import mlstdb
 
 if __name__ == "__main__":

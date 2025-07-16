@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = 'A Python package to update and manage the MLST database for the MLST tool.'
 readme = "README.md"
 requires-python = ">=3"
-license = "MIT"
+license = "GPL-3.0-or-later"
 keywords = []
 authors = [
   { name = "Himal Shrestha", email = "stha.himal2007@gmail.com" },
