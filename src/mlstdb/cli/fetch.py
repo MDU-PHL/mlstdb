@@ -138,7 +138,7 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
             error(f"Scheme URIs file not found: {scheme_uris}")
             error("Skipping scheme sanitisation step")
 
-        success("Fetch completed successfully!")
+        success("Fetch completed successfully! View the results in " + output_file + "\n" + "Use `mlstdb update` to download the required MLST datasets.")
 
     except Exception as e:
         error(f"An error occurred: {e}")

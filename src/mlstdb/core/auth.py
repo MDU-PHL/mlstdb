@@ -6,6 +6,8 @@ from typing import Tuple
 from rauth import OAuth1Service, OAuth1Session
 from mlstdb.core.config import get_config_dir, BASE_API, BASE_WEB, DB_MAPPING
 from mlstdb.utils import error, success, info
+from mlstdb.__about__ import __version__
+
 
 def setup_client_credentials(site: str) -> Tuple[str, str]:
     """Setup and save client credentials."""
@@ -42,7 +44,7 @@ def register_tokens(db: str):
     
     # Initialize OAuth service
     service = OAuth1Service(
-        name="BIGSdb_downloader",
+        name="MLSTdb downloader",
         consumer_key=client_id,
         consumer_secret=client_secret,
         request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
@@ -54,7 +56,7 @@ def register_tokens(db: str):
     info("\nRequesting temporary token...")
     r = service.get_raw_request_token(
         params={"oauth_callback": "oob"},
-        headers={"User-Agent": "BIGSdb downloader"}
+        headers={"User-Agent": f"mlstdb/{__version__}"}
     )
     if r.status_code != 200:
         error(f"Failed to get request token: {r.json()['message']}")
@@ -78,7 +80,7 @@ def register_tokens(db: str):
         request_token,
         request_secret,
         params={"oauth_verifier": verifier},
-        headers={"User-Agent": "BIGSdb downloader"},
+        headers={"User-Agent": f"mlstdb/{__version__}"},
     )
     
     if r.status_code != 200:
@@ -109,7 +111,7 @@ def register_tokens(db: str):
         access_token_secret=access_secret
     )
     
-    r = session.get(url, headers={"User-Agent": "BIGSdb downloader"})
+    r = session.get(url, headers={"User-Agent": f"mlstdb/{__version__}"})
     
     if r.status_code != 200:
         error(f"Failed to get session token: {r.json()['message']}")
