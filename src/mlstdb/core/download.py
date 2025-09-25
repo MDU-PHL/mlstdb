@@ -11,6 +11,7 @@ from rauth import OAuth1Session, OAuth1Service
 from mlstdb.core.config import get_config_dir, BASE_API, DB_MAPPING
 from mlstdb.core.auth import remove_db_credentials, register_tokens
 from mlstdb.utils import error, success, info
+from mlstdb.__about__ import __version__
 
 def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
     """Fetch JSON from URL with OAuth authentication and session token refresh."""
@@ -24,7 +25,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         access_token=session_token,
         access_token_secret=session_secret,
     )
-    session.headers.update({"User-Agent": "BIGSdb downloader"})
+    session.headers.update({"User-Agent": "mlstdb/{__version__}"})
 
     try:
         response = session.get(url)
@@ -58,7 +59,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             
             # Initialize OAuth service
             service = OAuth1Service(
-                name="BIGSdb_downloader",
+                name="MLSTdb downloader",
                 consumer_key=client_key,
                 consumer_secret=client_secret,
                 request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
@@ -74,7 +75,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
                 access_token=access_token,
                 access_token_secret=access_secret,
             )
-            session_request.headers.update({"User-Agent": "BIGSdb downloader"})
+            session_request.headers.update({"User-Agent": "mlstdb/{__version__}"})
             
             r = session_request.get(url_session)
             if r.status_code == 200:
@@ -155,7 +156,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         access_token_secret=session_secret,
     )
     
-    session.headers.update({"User-Agent": "BIGSdb downloader"})
+    session.headers.update({"User-Agent": "mlstdb/{__version__}"})
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
@@ -213,7 +214,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
                 access_token=new_token,
                 access_token_secret=new_secret,
             )
-            session.headers.update({"User-Agent": "BIGSdb downloader"})
+            session.headers.update({"User-Agent": "mlstdb/{__version__}"})
             response = session.get(url)
                 
     except requests.exceptions.HTTPError as e:
