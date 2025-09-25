@@ -56,7 +56,7 @@ def register_tokens(db: str):
     info("\nRequesting temporary token...")
     r = service.get_raw_request_token(
         params={"oauth_callback": "oob"},
-        headers={"User-Agent": "mlstdb/{__version__}"}
+        headers={"User-Agent": f"mlstdb/{__version__}"}
     )
     if r.status_code != 200:
         error(f"Failed to get request token: {r.json()['message']}")
@@ -80,7 +80,7 @@ def register_tokens(db: str):
         request_token,
         request_secret,
         params={"oauth_verifier": verifier},
-        headers={"User-Agent": "mlstdb/{__version__}"},
+        headers={"User-Agent": f"mlstdb/{__version__}"},
     )
     
     if r.status_code != 200:
@@ -111,7 +111,7 @@ def register_tokens(db: str):
         access_token_secret=access_secret
     )
     
-    r = session.get(url, headers={"User-Agent": "mlstdb/{__version__}"})
+    r = session.get(url, headers={"User-Agent": f"mlstdb/{__version__}"})
     
     if r.status_code != 200:
         error(f"Failed to get session token: {r.json()['message']}")

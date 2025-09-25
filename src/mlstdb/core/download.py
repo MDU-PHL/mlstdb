@@ -25,7 +25,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         access_token=session_token,
         access_token_secret=session_secret,
     )
-    session.headers.update({"User-Agent": "mlstdb/{__version__}"})
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
 
     try:
         response = session.get(url)
@@ -75,7 +75,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
                 access_token=access_token,
                 access_token_secret=access_secret,
             )
-            session_request.headers.update({"User-Agent": "mlstdb/{__version__}"})
+            session_request.headers.update({"User-Agent": f"mlstdb/{__version__}"})
             
             r = session_request.get(url_session)
             if r.status_code == 200:
@@ -156,7 +156,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         access_token_secret=session_secret,
     )
     
-    session.headers.update({"User-Agent": "mlstdb/{__version__}"})
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
@@ -214,7 +214,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
                 access_token=new_token,
                 access_token_secret=new_secret,
             )
-            session.headers.update({"User-Agent": "mlstdb/{__version__}"})
+            session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
             response = session.get(url)
                 
     except requests.exceptions.HTTPError as e:
