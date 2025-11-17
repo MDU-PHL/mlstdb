@@ -63,7 +63,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             
             # Initialize OAuth service
             service = OAuth1Service(
-                name="BIGSdb_downloader",
+                name="MLSTdb downloader",
                 consumer_key=client_key,
                 consumer_secret=client_secret,
                 request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
