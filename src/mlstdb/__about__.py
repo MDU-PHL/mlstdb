@@ -1,4 +1,4 @@
 # SPDX-FileCopyrightText: 2025-present Himal Shrestha <himal2007@duck.com>
 #
-# SPDX-License-Identifier: MIT
-__version__ = "0.1.6"
+# SPDX-License-Identifier: GPL-3.0-or-later
+__version__ = "0.1.7"

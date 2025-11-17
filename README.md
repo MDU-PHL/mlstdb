@@ -16,9 +16,10 @@
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-  - [Disclaimer / Caution](#%EF%B8%8F-disclaimer--caution)
+  - [⚠️ Disclaimer / Caution](#️-disclaimer--caution)
   - [Usage](#usage)
   - [Final Steps](#final-steps)
+  - [Acknowledgements](#acknowledgements)
   - [License](#license)
 
 ## Prerequisites
@@ -134,15 +135,22 @@ We can prepare a custom `mlst_schemes_<db>.tab` file with headers `database	spec
 and use `mlstdb update` to update the MLST database for select species and schemes. This will automatically create a BLAST database from the downloaded sequences.
 
 ## Final Steps
+
 After running all scripts, verify the database setup by running the `mlst` tool with the updated database:
 ```bash
 mlst --blastdb <path_to_blast/mlst.fa> --datadir <path_to_pubmlst_dir>
 ```
 
+## Acknowledgements
+
+This tool was inspired by and builds upon the work of:
+
+- [BIGSdb_downloader](https://github.com/kjolley/BIGSdb_downloader) by Keith Jolley - The original OAuth-based downloader for BIGSdb databases
+- [pyMLST](https://github.com/bvalot/pyMLST) - Python implementation for MLST with database management
+
 
 ## License
 
-`mlstdb` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
-
+`mlstdb` was previously licensed under MIT. As of version 0.1.7, it is licensed under GPL v3. Original MIT‑licensed code is preserved and attributed according to MIT terms.
 
 For additional support, please raise an issue.
