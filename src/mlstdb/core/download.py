@@ -13,6 +13,15 @@ from mlstdb.core.auth import remove_db_credentials, register_tokens
 from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
+def get_db_type_from_url(url: str) -> str:
+    """Determine database type from URL."""
+    if 'pasteur.fr' in url:
+        return 'pasteur'
+    elif 'pubmlst.org' in url:
+        return 'pubmlst'
+    else:
+        raise ValueError(f"Unable to determine database type from URL: {url}")
+
 def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
     """Fetch JSON from URL with OAuth authentication and session token refresh."""
     if verbose:
@@ -41,12 +50,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             info("Invalid session token. Requesting new one...")
             
             # Determine which database we're working with
-            if url.startswith(BASE_API['pubmlst']):
-                db = 'pubmlst'
-            elif url.startswith(BASE_API['pasteur']):
-                db = 'pasteur'
-            else:
-                raise ValueError(f"Unable to determine database from URL: {url}")
+            db = get_db_type_from_url(url)
             
             # Get new session token using existing credentials
             config = configparser.ConfigParser(interpolation=None)
@@ -127,10 +131,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             if click.confirm("\nWould you like to delete credentials for this database?", default=False):
                 try:
                     # Use the db parameter from the main function
-                    if url.startswith(BASE_API['pubmlst']):
-                        db = 'pubmlst'
-                    elif url.startswith(BASE_API['pasteur']):
-                        db = 'pasteur'
+                    db = get_db_type_from_url(url)
                     remove_db_credentials(config_dir, db)
                     info("\nCredentials deleted successfully.")
                     info("Please run the command again to generate new credentials.")
