@@ -1,5 +1,6 @@
 # mlstdb
 
+[![Tests](https://github.com/MDU-PHL/mlstdb/actions/workflows/test.yml/badge.svg)](https://github.com/MDU-PHL/mlstdb/actions/workflows/test.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/version.svg)](https://anaconda.org/bioconda/mlstdb)
