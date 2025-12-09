@@ -5,6 +5,8 @@
 import click
 from mlstdb.cli.fetch import fetch
 from mlstdb.cli.update import update
+from mlstdb.cli.inspect import inspect
+from mlstdb.cli.compare import compare
 from mlstdb.__about__ import __version__
 
 @click.group()
@@ -17,3 +19,5 @@ def mlstdb():
 
 mlstdb.add_command(fetch)
 mlstdb.add_command(update)
+mlstdb.add_command(inspect)
+mlstdb.add_command(compare)
