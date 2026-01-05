@@ -5,6 +5,7 @@ import click
 import requests
 import subprocess
 import configparser
+import json
 from pathlib import Path
 from tqdm import tqdm
 from rauth import OAuth1Session, OAuth1Service
@@ -170,8 +171,8 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         if verbose:
             info(f"Retrieved MLST scheme: {mlst_scheme}")
 
-        # Modified version handling for null values
-        db_version = mlst_scheme.get('last_added', 'Not found')
+        # Extract scheme metadata
+        db_version = mlst_scheme.get('last_added', mlst_scheme. get('last_updated', 'Not found'))
         if db_version is None:
             db_version = 'No version information available'
         info(f"Database version: {db_version}")
@@ -180,6 +181,30 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         db_version_path = os.path.join(directory, 'database_version.txt')
         with open(db_version_path, 'w') as version_file:
             version_file.write(db_version + '\n')
+        
+        locus_count = mlst_scheme.get('locus_count', len(mlst_scheme.get('loci', [])))
+        last_updated = mlst_scheme.get('last_updated', db_version)
+
+        # Determine database type from URL
+        db_type = get_db_type_from_url(url)
+
+        # Create scheme info JSON
+        scheme_info = {
+            "name": scheme_name,
+            "alleles": locus_count,
+            "date": last_updated if last_updated != 'Not found' else None,
+            "source": db_type,
+            "API": url
+        }
+
+        # Save scheme info to JSON file
+        scheme_info_path = os.path.join(directory, f'{scheme_name}_info.json')
+        with open(scheme_info_path, 'w') as info_file:
+            json.dump(scheme_info, info_file, indent=2)
+            info_file.write('\n')
+
+        if verbose:
+            info(f"Scheme info saved to {scheme_info_path}")
 
         # Download loci with progress bar
         for loci in tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus"):
