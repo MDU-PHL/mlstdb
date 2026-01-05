@@ -30,21 +30,38 @@ Should install `mlst` for the use of this tool.
 
 ## Installation
 
-From bioconda: 
+**Recommended installation method:**
+
+First, create a conda environment with `mlst` installed:
 ```sh
-conda install -c bioconda mlstdb
+conda create -n mlst -c bioconda mlst
+conda activate mlst
 ```
 
-From PyPI:
+Then install `mlstdb` using pip:
 ```sh
 pip install mlstdb
 ```
 
-Recommended way to install is from bioconda with `mlst` tool. 
 
+**Alternative installation methods:**
+
+From bioconda (note: include `conda-forge` channel to resolve dependencies):
 ```sh
-conda create -n mlst -c bioconda mlst mlstdb
+conda install -c conda-forge -c bioconda mlstdb
 ```
+
+Or install both tools together:
+```sh
+conda create -n mlst -c conda-forge -c bioconda mlst mlstdb
+```
+
+From PyPI only: 
+```sh
+pip install mlstdb
+```
+
+> **Note:** If you encounter dependency errors when installing from bioconda (e.g., `nothing provides rauth >=0.7.3`), ensure you include the `-c conda-forge` channel in your installation command, or use the recommended pip installation method instead. 
 
 ## ⚠️ Disclaimer / Caution
 Please read before using `mlstdb`:
