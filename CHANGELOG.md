@@ -12,14 +12,14 @@
 
 ## [0.2.0] - 2026-01-05
 
-- Updated `database_version.txt` to include a trailing newline character. Addresses issue #11.
+- Updated `database_version.txt` to include a trailing newline character (Closes #11).
 - Added `<scheme>_info.json` files for each downloaded scheme containing:
    - Scheme name
    - Number of alleles (locus count)
    - Last updated date
    - Source database (pubmlst/pasteur)
    - API endpoint URL
-   - Addresses issue #20. 
-- Improved installation instructions in README. Addresses issue #16.
+   - (Closes #20)
+- Improved installation instructions in README (Closes #16). 
 
 [0.2.0]: https://github.com/himal2007/mlstdb/releases/tag/v0.2.0
