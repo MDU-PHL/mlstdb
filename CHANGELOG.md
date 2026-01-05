@@ -9,3 +9,17 @@
 - Added CHANGELOG.md file to document version history
 
 [0.1.7]: https://github.com/himal2007/mlstdb/releases/tag/v0.1.7
+
+## [0.2.0] - 2026-01-05
+
+- Updated `database_version.txt` to include a trailing newline character. Addresses issue #11.
+- Added `<scheme>_info.json` files for each downloaded scheme containing:
+   - Scheme name
+   - Number of alleles (locus count)
+   - Last updated date
+   - Source database (pubmlst/pasteur)
+   - API endpoint URL
+   - Addresses issue #20. 
+- Improved installation instructions in README. Addresses issue #16.
+
+[0.2.0]: https://github.com/himal2007/mlstdb/releases/tag/v0.2.0
