@@ -179,7 +179,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         # Save database version to a file
         db_version_path = os.path.join(directory, 'database_version.txt')
         with open(db_version_path, 'w') as version_file:
-            version_file.write(db_version)
+            version_file.write(db_version + '\n')
 
         # Download loci with progress bar
         for loci in tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus"):
