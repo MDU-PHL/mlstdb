@@ -1,5 +1,6 @@
 import click
 from pathlib import Path
+import importlib.resources
 from mlstdb.core.auth import get_client_credentials, retrieve_session_token
 from mlstdb.core.download import get_mlst_files, create_blast_db
 from mlstdb.core.config import check_dir
@@ -9,8 +10,8 @@ import sys
 
 @click.command()
 @click.help_option('-h', '--help')
-@click.option('--input', '-i', required=True, 
-              help='Path to mlst_schemes_<db>.tab containing MLST scheme URLs')
+@click.option('--input', '-i', required=False, default=None,
+              help='Optional: Path to mlst_schemes_<db>.tab containing MLST scheme URLs')
 @click.option('--directory', '-d', default='pubmlst',
               help='Directory to save the downloaded MLST schemes (default: pubmlst)')
 @click.option('--blast-directory', '-b',
@@ -22,11 +23,24 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
     """
     Update MLST schemes and create BLAST database.
 
-    Downloads MLST schemes from the specified input file and creates a BLAST database
-    from the downloaded sequences. Authentication tokens should be set up using fetch.py.
+    Downloads MLST schemes from PubMLST and Pasteur databases using the curated scheme list included in the package or using a user-specified input file and creates a BLAST database from the downloaded sequences.
+    
+    ---
+    
+    Please ensure you have:
+    
+    1. Successful connection to both PubMLST and Pasteur databases via 'mlstdb connect'
+    
+    2. Registered to all the databases you wish to update.
+    
+    ---
     """
     try:
         # Read the input file
+        # if input is not provided, use the package data
+        if input is None:
+            with importlib.resources.path('mlstdb.data', 'mlst_schemes_all.tab') as default_path:
+                input = str(default_path)
         with open(input, 'r') as f:
             # Skip header
             header = next(f)
