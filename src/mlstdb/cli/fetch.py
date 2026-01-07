@@ -30,12 +30,36 @@ from mlstdb.utils import error, success, info
 @click.option('--verbose', '-v', is_flag=True, 
               help='Enable verbose logging for debugging')
 def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
-    """BIGSdb Scheme Fetcher Tool
+    """[ADVANCED] BIGSdb Scheme Explorer and Fetcher
     
-    This tool downloads MLST scheme information from BIGSdb databases.
-    It will automatically handle authentication and save the results.
+    ⚠️  ADVANCED USE ONLY - For schema exploration and custom workflows. 
+    
+    For standard usage, use the recommended workflow:
+      1. mlstdb connect --db pubmlst
+      2. mlstdb connect --db pasteur
+      3. mlstdb update
+    
+    This advanced tool allows exploration of all available schemes from
+    BIGSdb databases with custom filtering and matching options.
+    It handles both authentication and scheme discovery.
     """
     
+    # Show deprecation notice
+    click.secho("\n" + "="*70, fg="yellow")
+    click.secho("  ADVANCED COMMAND - Not required for standard usage", fg="yellow", bold=True)
+    click.secho("="*70, fg="yellow")
+    click.echo("\nFor most users, please use the recommended workflow:")
+    click.secho("  1. mlstdb connect --db pubmlst", fg="cyan")
+    click.secho("  2. mlstdb update --db pubmlst", fg="cyan")
+    click.echo("\nThis 'fetch' command is for:")
+    click.echo("  • Advanced schema exploration")
+    click.echo("  • Custom scheme filtering")
+    click.echo("  • Direct API access for specialised workflows")
+    click.secho("\n" + "="*70 + "\n", fg="yellow")
+    
+    if not click.confirm("Do you want to continue with advanced fetch?", default=False):
+        info("Cancelled.  Use 'mlstdb connect' and 'mlstdb update' instead.")
+        sys.exit(0)
     try:
         # If scheme_uris is not provided, use the package data
         if scheme_uris is None:
