@@ -9,7 +9,7 @@ from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
 
-def setup_client_credentials(site: str) -> Tuple[str, str]:
+def setup_client_credentials(site: str) -> Tuple[str, str]: 
     """Setup and save client credentials."""
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "client_credentials"
@@ -67,7 +67,7 @@ def register_tokens(db: str):
     success("Temporary token received")
     
     # Get access token
-    click.secho("\nAuthorization Required", fg="yellow", bold=True)
+    click.secho("\nAuthorisation Required", fg="yellow", bold=True)
     info(
         "\nPlease open this URL in your browser:\n"
         f"{BASE_WEB[db]}?db={DB_MAPPING[db]}&page=authorizeClient&oauth_token={request_token}"
@@ -79,7 +79,7 @@ def register_tokens(db: str):
     r = service.get_raw_access_token(
         request_token,
         request_secret,
-        params={"oauth_verifier": verifier},
+        params={"oauth_verifier":  verifier},
         headers={"User-Agent": f"mlstdb/{__version__}"},
     )
     
@@ -87,11 +87,11 @@ def register_tokens(db: str):
         error(f"Failed to get access token: {r.json()['message']}")
         sys.exit(1)
         
-    access_token = r.json()["oauth_token"]
+    access_token = r. json()["oauth_token"]
     access_secret = r.json()["oauth_token_secret"]
     
     # Save access token
-    config = configparser.ConfigParser(interpolation=None)
+    config = configparser. ConfigParser(interpolation=None)
     file_path = get_config_dir() / "access_tokens"
     if file_path.exists():
         config.read(file_path)
@@ -118,10 +118,10 @@ def register_tokens(db: str):
         sys.exit(1)
         
     token = r.json()["oauth_token"]
-    secret = r.json()["oauth_token_secret"]
+    secret = r. json()["oauth_token_secret"]
     
     # Save session token
-    config = configparser.ConfigParser(interpolation=None)
+    config = configparser. ConfigParser(interpolation=None)
     file_path = get_config_dir() / "session_tokens"
     if file_path.exists():
         config.read(file_path)
@@ -157,7 +157,7 @@ def get_client_credentials(key_name: str) -> Tuple[str, str]:
     
     if file_path.is_file():
         config.read(file_path)
-        if config.has_section(key_name):
+        if config. has_section(key_name):
             return (config[key_name]["client_id"], 
                    config[key_name]["client_secret"])
     
@@ -171,7 +171,7 @@ def remove_db_credentials(config_dir: Path, db: str) -> None:
             config = configparser.ConfigParser(interpolation=None)
             config.read(file_path)
             if db in config:
-                config.remove_section(db)
+                config. remove_section(db)
                 with open(file_path, 'w') as f:
                     config.write(f)
                 success(f"Removed {db} credentials from {file_name}")
@@ -181,10 +181,86 @@ def retrieve_session_token(key_name: str) -> Tuple[str, str]:
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "session_tokens"
     
-    if file_path.is_file():
+    if file_path. is_file():
         config.read(file_path)
         if config.has_section(key_name):
             return (config[key_name]["token"], 
                    config[key_name]["secret"])
     
     return None, None
+
+def test_connection(db: str, verbose: bool = False) -> bool:
+    """Test if the connection to the database is valid. 
+    
+    Args:
+        db: Database name ('pubmlst' or 'pasteur')
+        verbose: If True, display JSON payload from test URI
+        
+    Returns:
+        True if connection is valid, False otherwise
+    """
+    try:
+        # Get client credentials
+        client_id, client_secret = get_client_credentials(db)
+        
+        # Get session tokens
+        session_token, session_secret = retrieve_session_token(db)
+        
+        if not session_token or not session_secret:
+            return False
+        
+        # Test URL - using the database info endpoint
+        test_url = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/schemes"
+        
+        info(f"\nTesting connection to {db}...")
+        info(f"Using test database:  {DB_MAPPING[db]}")
+        info("\nPlease ensure you are registered to this database.")
+        
+        # Create OAuth session
+        session = OAuth1Session(
+            consumer_key=client_id,
+            consumer_secret=client_secret,
+            access_token=session_token,
+            access_token_secret=session_secret,
+        )
+        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+        
+        # Make test request
+        if verbose:
+            info(f"\nRequesting:  {test_url}")
+        
+        response = session.get(test_url)
+        
+        if verbose:
+            info(f"\nResponse status code: {response.status_code}")
+            if response.status_code == 200:
+                try:
+                    json_payload = response.json()
+                    info("\nJSON payload received:")
+                    import json as json_module
+                    click.echo(json_module.dumps(json_payload, indent=2))
+                except Exception as e:
+                    error(f"Could not parse JSON response: {e}")
+        
+        if response.status_code == 200:
+            return True
+        elif response.status_code == 401:
+            error("\nAuthentication failed - session token may be invalid or expired")
+            return False
+        elif response.status_code == 403:
+            error("\nAccess denied - you may not have permission to access this database")
+            info(f"Please ensure you are registered to the '{DB_MAPPING[db]}' database")
+            return False
+        else:
+            error(f"\nConnection test failed with status code: {response. status_code}")
+            return False
+            
+    except ValueError as e:
+        error(f"\n{e}")
+        return False
+    except Exception as e:
+        error(f"\nConnection test failed: {e}")
+        if verbose:
+            import traceback
+            error(traceback.format_exc())
+        return False

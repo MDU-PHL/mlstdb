@@ -1,7 +1,7 @@
 import click
 import configparser
-from mlstdb.core.auth import register_tokens
-from mlstdb.core. config import get_config_dir
+from mlstdb.core.auth import register_tokens, test_connection
+from mlstdb.core.config import get_config_dir
 from mlstdb.utils import error, success, info
 
 
@@ -15,15 +15,15 @@ def connect(db, verbose):
     """Initial Database Registration and Setup
     
     Establishes connection with PubMLST or Pasteur databases by registering
-    OAuth credentials and obtaining session tokens.  This is required before
-    using the update command. 
+    OAuth credentials and obtaining session tokens. This is required before
+    using the update command.  
     """
     
     try:
         # If db is not provided, prompt for it
         if not db:
             db = click. prompt(
-                "Which database would you like to connect to? ",
+                "Which database would you like to connect to?",
                 type=click.Choice(['pubmlst', 'pasteur']),
                 default='pubmlst'
             )
@@ -45,13 +45,22 @@ def connect(db, verbose):
             
             if has_client_creds and has_session_tokens:
                 already_connected = True
-                click.secho(f"\n✓ Already connected to {db}", fg="green")
+                click.secho(f"\n✓ Credentials found for {db}", fg="green")
                 
-                if not click.confirm(f"\nDo you want to re-register with {db}?", default=False):
+                # Test the connection
+                if test_connection(db, verbose=verbose):
+                    success(f"\n✓ Connection to {db} is valid!")
                     info(f"Using existing credentials for {db}")
-                    success(f"\nConnection to {db} verified!")
                     info("\nYou can now use 'mlstdb update' to update/download your database.")
                     return
+                else:
+                    error(f"\n✗ Connection test failed for {db}")
+                    info("The credentials exist but the connection is not valid.")
+                    
+                    if not click. confirm(f"\nDo you want to re-register with {db}?", default=True):
+                        error("\nmlstdb not connected. Please re-register when ready.") 
+                        raise SystemExit(1)
+                    # If user says yes, continue to registration below
         
         # Register tokens
         if verbose:
@@ -59,15 +68,22 @@ def connect(db, verbose):
         
         register_tokens(db)
         
-        success(f"\n✓ Successfully connected to {db}!")
-        info("\nNext steps:")
-        info("  1. Use 'mlstdb update' to update/download MLST schemes")
-        info("  2. Or use 'mlstdb fetch' for advanced schema exploration")
+        # Test the newly registered connection
+        info("\nVerifying new connection...")
+        if test_connection(db, verbose=verbose):
+            success(f"\n✓ Successfully connected to {db}!")
+            info("\nNext steps:")
+            info("  1. Use 'mlstdb update' to update/download MLST schemes")
+            info("  2. Or use 'mlstdb fetch' for advanced schema exploration")
+        else:
+            error(f"\n✗ Connection test failed after registration")
+            info("Please check your credentials and try again.")
+            raise SystemExit(1)
         
     except KeyboardInterrupt:
         error("\n\nConnection cancelled by user")
         raise SystemExit(1)
-    except Exception as e:
+    except Exception as e: 
         error(f"Connection failed: {e}")
         if verbose:
             import traceback
