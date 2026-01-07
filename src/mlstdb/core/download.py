@@ -11,7 +11,7 @@ from pathlib import Path
 from tqdm import tqdm
 from rauth import OAuth1Session, OAuth1Service
 from mlstdb.core.config import get_config_dir, BASE_API, DB_MAPPING
-from mlstdb.core.auth import remove_db_credentials, register_tokens
+from mlstdb.core.auth import remove_db_credentials, register_tokens, refresh_session_token
 from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
@@ -49,57 +49,13 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         
         # Handle 401 Unauthorised error - try once to refresh token
         if response.status_code == 401:
-            info("Invalid session token. Requesting new one...")
-            
             # Determine which database we're working with
             db = get_db_type_from_url(url)
             
-            # Get new session token using existing credentials
-            config = configparser.ConfigParser(interpolation=None)
-            access_tokens_file = get_config_dir() / "access_tokens"
+            # Use the new refresh_session_token function
+            new_tokens = refresh_session_token(db, client_key, client_secret, verbose)
             
-            # Read access tokens
-            config.read(access_tokens_file)
-            access_token = config[db]["token"]
-            access_secret = config[db]["secret"]
-            
-            # Initialize OAuth service
-            service = OAuth1Service(
-                name="MLSTdb downloader",
-                consumer_key=client_key,
-                consumer_secret=client_secret,
-                request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
-                access_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_access_token",
-                base_url=BASE_API[db],
-            )
-            
-            # Get new session token
-            url_session = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_session_token"
-            session_request = OAuth1Session(
-                client_key,
-                client_secret,
-                access_token=access_token,
-                access_token_secret=access_secret,
-            )
-            session_request.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-            
-            r = session_request.get(url_session)
-            if r.status_code == 200:
-                new_token = r.json()["oauth_token"]
-                new_secret = r.json()["oauth_token_secret"]
-                
-                # Save new session token
-                config = configparser.ConfigParser(interpolation=None)
-                session_tokens_file = get_config_dir() / "session_tokens"
-                if session_tokens_file.exists():
-                    config.read(session_tokens_file)
-                config[db] = {"token": new_token, "secret": new_secret}
-                with open(session_tokens_file, "w") as configfile:
-                    config.write(configfile)
-                
-                if verbose:
-                    success("New session token obtained and saved")
-                
+            if new_tokens:
                 info("\nSession token has been refreshed. Please run the command again.")
                 sys.exit(0)  # Exit cleanly after token refresh
             else:
@@ -165,7 +121,34 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)    
+        response = session.get(url)
+        
+        # Handle expired token (401)
+        if response.status_code == 401:
+            if verbose:
+                info("Session token expired, attempting to refresh...")
+            
+            # Get database type from URL    
+            db = get_db_type_from_url(url)
+            
+            # Use the new refresh_session_token function
+            new_tokens = refresh_session_token(db, client_key, client_secret, verbose)
+            
+            if new_tokens:
+                # Retry with new token
+                session_token, session_secret = new_tokens
+                session = OAuth1Session(
+                    consumer_key=client_key,
+                    consumer_secret=client_secret,
+                    access_token=session_token,
+                    access_token_secret=session_secret,
+                )
+                session.headers.update({"User-Agent":  f"mlstdb/{__version__}"})
+                response = session.get(url)
+            else:
+                error("Failed to refresh session token")
+                sys. exit(1)
+        
         response.raise_for_status()
         mlst_scheme = response.json()
         
@@ -181,6 +164,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         locus_count = mlst_scheme.get('locus_count', len(mlst_scheme.get('loci', [])))
         download_date = datetime.now().strftime('%Y-%m-%d')
 
+        info(f"Scheme name: {scheme_name}")
         info(f"Scheme last updated: {last_updated}")
         info(f"Download date: {download_date}")
 
@@ -228,26 +212,6 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         profiles_file_path = os.path.join(directory, f"{scheme_name}. txt")
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
-            
-        # Handle expired token (401)
-        if response.status_code == 401:
-            if verbose:
-                info("Session token expired, attempting to refresh...")
-            # Get database type from URL    
-            db = db_type
-            
-            # Register new tokens
-            new_token, new_secret = register_tokens(db)
-            
-            # Retry with new token
-            session = OAuth1Session(
-                consumer_key=client_key,
-                consumer_secret=client_secret,
-                access_token=new_token,
-                access_token_secret=new_secret,
-            )
-            session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-            response = session.get(url)
                 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 403:

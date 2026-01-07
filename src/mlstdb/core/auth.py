@@ -2,14 +2,14 @@ import configparser
 import click
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 from rauth import OAuth1Service, OAuth1Session
 from mlstdb.core.config import get_config_dir, BASE_API, BASE_WEB, DB_MAPPING
 from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
 
-def setup_client_credentials(site: str) -> Tuple[str, str]: 
+def setup_client_credentials(site: str) -> Tuple[str, str]:
     """Setup and save client credentials."""
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "client_credentials"
@@ -79,7 +79,7 @@ def register_tokens(db: str):
     r = service.get_raw_access_token(
         request_token,
         request_secret,
-        params={"oauth_verifier":  verifier},
+        params={"oauth_verifier": verifier},
         headers={"User-Agent": f"mlstdb/{__version__}"},
     )
     
@@ -91,7 +91,7 @@ def register_tokens(db: str):
     access_secret = r.json()["oauth_token_secret"]
     
     # Save access token
-    config = configparser. ConfigParser(interpolation=None)
+    config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "access_tokens"
     if file_path.exists():
         config.read(file_path)
@@ -157,7 +157,7 @@ def get_client_credentials(key_name: str) -> Tuple[str, str]:
     
     if file_path.is_file():
         config.read(file_path)
-        if config. has_section(key_name):
+        if config.has_section(key_name):
             return (config[key_name]["client_id"], 
                    config[key_name]["client_secret"])
     
@@ -245,8 +245,31 @@ def test_connection(db: str, verbose: bool = False) -> bool:
         if response.status_code == 200:
             return True
         elif response.status_code == 401:
-            error("\nAuthentication failed - session token may be invalid or expired")
-            return False
+            # Try to refresh the session token
+            info("\nAttempting to refresh session token...")
+            new_tokens = refresh_session_token(db, client_id, client_secret, verbose)
+            if new_tokens:
+                info("Session token refreshed. Testing connection again...")
+                # Retry the test with new token
+                session_token, session_secret = new_tokens
+                session = OAuth1Session(
+                    consumer_key=client_id,
+                    consumer_secret=client_secret,
+                    access_token=session_token,
+                    access_token_secret=session_secret,
+                )
+                session.headers. update({"User-Agent": f"mlstdb/{__version__}"})
+                response = session.get(test_url)
+                
+                if response. status_code == 200:
+                    success("Connection successful after token refresh!")
+                    return True
+                else:
+                    error(f"\nAuthentication failed after token refresh - status code: {response.status_code}")
+                    return False
+            else:
+                error("\nAuthentication failed - session token may be invalid or expired")
+                return False
         elif response.status_code == 403:
             error("\nAccess denied - you may not have permission to access this database")
             info(f"Please ensure you are registered to the '{DB_MAPPING[db]}' database")
@@ -264,3 +287,81 @@ def test_connection(db: str, verbose: bool = False) -> bool:
             import traceback
             error(traceback.format_exc())
         return False
+
+def refresh_session_token(db:  str, client_key: str, client_secret: str, verbose: bool = False) -> Optional[Tuple[str, str]]: 
+    """Refresh session token using existing access tokens. 
+    
+    Args:
+        db: Database name ('pubmlst' or 'pasteur')
+        client_key: OAuth client ID
+        client_secret: OAuth client secret
+        verbose: If True, display detailed information
+        
+    Returns: 
+        Tuple of (new_token, new_secret) if successful, None otherwise
+    """
+    try:
+        info("Invalid session token. Requesting new one...")
+        
+        # Get access tokens
+        config = configparser.ConfigParser(interpolation=None)
+        access_tokens_file = get_config_dir() / "access_tokens"
+        
+        if not access_tokens_file.exists():
+            error("Access tokens file not found. Please re-register.")
+            return None
+        
+        config.read(access_tokens_file)
+        if not config.has_section(db):
+            error(f"No access tokens found for {db}. Please re-register.")
+            return None
+            
+        access_token = config[db]["token"]
+        access_secret = config[db]["secret"]
+        
+        # Get new session token
+        url_session = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_session_token"
+        session_request = OAuth1Session(
+            client_key,
+            client_secret,
+            access_token=access_token,
+            access_token_secret=access_secret,
+        )
+        session_request.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+        
+        if verbose:
+            info(f"Requesting new session token from:  {url_session}")
+        
+        r = session_request.get(url_session)
+        
+        if r.status_code == 200:
+            new_token = r.json()["oauth_token"]
+            new_secret = r.json()["oauth_token_secret"]
+            
+            # Save new session token
+            config = configparser.ConfigParser(interpolation=None)
+            session_tokens_file = get_config_dir() / "session_tokens"
+            if session_tokens_file.exists():
+                config.read(session_tokens_file)
+            config[db] = {"token": new_token, "secret": new_secret}
+            with open(session_tokens_file, "w") as configfile:
+                config. write(configfile)
+            
+            if verbose:
+                success("New session token obtained and saved")
+            else:
+                success("Session token refreshed successfully")
+            
+            return new_token, new_secret
+        else:
+            error(f"Failed to refresh session token: {r.status_code}")
+            if verbose and r.text:
+                error(f"Response: {r.text}")
+            return None
+            
+    except Exception as e:
+        error(f"Failed to refresh session token: {e}")
+        if verbose:
+            import traceback
+            error(traceback.format_exc())
+        return None
