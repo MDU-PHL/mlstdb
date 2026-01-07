@@ -6,6 +6,7 @@ import requests
 import subprocess
 import configparser
 import json
+from datetime import datetime
 from pathlib import Path
 from tqdm import tqdm
 from rauth import OAuth1Session, OAuth1Service
@@ -147,7 +148,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         raise
 
 
-def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str, 
+def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: str, 
                    session_token: str, session_secret: str, scheme_name: str, 
                    verbose: bool = False) -> None:
     """Download MLST data and save them in the given directory."""
@@ -172,43 +173,48 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
             info(f"Retrieved MLST scheme: {mlst_scheme}")
 
         # Extract scheme metadata
-        db_version = mlst_scheme.get('last_added', mlst_scheme. get('last_updated', 'Not found'))
-        if db_version is None:
-            db_version = 'No version information available'
-        info(f"Database version: {db_version}")
-
-        # Save database version to a file
-        db_version_path = os.path.join(directory, 'database_version.txt')
-        with open(db_version_path, 'w') as version_file:
-            version_file.write(db_version + '\n')
+        last_added = mlst_scheme.get('last_added', mlst_scheme. get('last_updated', 'Not found'))
+        if last_added is None:
+            last_added = 'No version information available'
         
+        last_updated = mlst_scheme.get('last_updated', last_added)
         locus_count = mlst_scheme.get('locus_count', len(mlst_scheme.get('loci', [])))
-        last_updated = mlst_scheme.get('last_updated', db_version)
+        download_date = datetime.now().strftime('%Y-%m-%d')
+
+        info(f"Scheme last updated: {last_updated}")
+        info(f"Download date: {download_date}")
 
         # Determine database type from URL
         db_type = get_db_type_from_url(url)
 
         # Create scheme info JSON
         scheme_info = {
-            "name": scheme_name,
-            "alleles": locus_count,
-            "date": last_updated if last_updated != 'Not found' else None,
+            "name":  scheme_name,
+            "locus": locus_count,
+            "download_date": download_date,
+            "last_updated": last_updated if last_updated != 'Not found' else None,
             "source": db_type,
             "API": url
         }
 
         # Save scheme info to JSON file
-        scheme_info_path = os.path.join(directory, f'{scheme_name}_info.json')
+        scheme_info_path = os.path. join(directory, f'{scheme_name}_info.json')
         with open(scheme_info_path, 'w') as info_file:
             json.dump(scheme_info, info_file, indent=2)
-            info_file.write('\n')
+            info_file.write('\n')  # Add trailing newline
 
         if verbose:
             info(f"Scheme info saved to {scheme_info_path}")
 
+        # Keep database_version.txt for backwards compatibility
+        # This can be removed in a future version
+        db_version_path = os.path.join(directory, 'database_version.txt')
+        with open(db_version_path, 'w') as version_file:
+            version_file.write(f"{last_updated}\n")
+
         # Download loci with progress bar
         for loci in tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus"):
-            name = loci.split('/')[-1]
+            name = loci. split('/')[-1]
             loci_fasta = session.get(loci + '/alleles_fasta')
             loci_fasta.raise_for_status()
             loci_file_name = os.path.join(directory, name + '.tfa')
@@ -219,7 +225,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         profiles_url = url + '/profiles_csv'
         profiles = session.get(profiles_url)
         profiles.raise_for_status()
-        profiles_file_path = os.path.join(directory, f"{scheme_name}.txt")
+        profiles_file_path = os.path.join(directory, f"{scheme_name}. txt")
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
             
@@ -228,7 +234,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
             if verbose:
                 info("Session token expired, attempting to refresh...")
             # Get database type from URL    
-            db = 'pubmlst' if 'pubmlst.org' in url else 'pasteur'
+            db = db_type
             
             # Register new tokens
             new_token, new_secret = register_tokens(db)
