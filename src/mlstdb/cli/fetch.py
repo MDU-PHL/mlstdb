@@ -32,14 +32,14 @@ from mlstdb.utils import error, success, info
 def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
     """[ADVANCED] BIGSdb Scheme Explorer and Fetcher
     
-    ⚠️  ADVANCED USE ONLY - For schema exploration and custom workflows. 
+    ⚠️  ADVANCED USE ONLY - For scheme exploration and custom workflows. 
     
     For standard usage, use the recommended workflow:
       1. mlstdb connect --db pubmlst
       2. mlstdb connect --db pasteur
       3. mlstdb update
     
-    This advanced tool allows exploration of all available schemes from
+    The fetch subcommand allows exploration of all available schemes from
     BIGSdb databases with custom filtering and matching options.
     It handles both authentication and scheme discovery.
     """
@@ -49,16 +49,15 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
     click.secho("  ADVANCED COMMAND - Not required for standard usage", fg="yellow", bold=True)
     click.secho("="*70, fg="yellow")
     click.echo("\nFor most users, please use the recommended workflow:")
-    click.secho("  1. mlstdb connect --db pubmlst", fg="cyan")
-    click.secho("  2. mlstdb update --db pubmlst", fg="cyan")
+    click.secho("  1. mlstdb connect --db pubmlst/pasteur", fg="cyan")
+    click.secho("  2. mlstdb update", fg="cyan")
     click.echo("\nThis 'fetch' command is for:")
-    click.echo("  • Advanced schema exploration")
-    click.echo("  • Custom scheme filtering")
-    click.echo("  • Direct API access for specialised workflows")
+    click.echo("  • Exploring all available schemes")
+    click.echo("  • Custom filtering of schemes")
     click.secho("\n" + "="*70 + "\n", fg="yellow")
     
     if not click.confirm("Do you want to continue with advanced fetch?", default=False):
-        info("Cancelled.  Use 'mlstdb connect' and 'mlstdb update' instead.")
+        info("Cancelled. Use 'mlstdb connect' and 'mlstdb update' instead.")
         sys.exit(0)
     try:
         # If scheme_uris is not provided, use the package data

@@ -9,8 +9,7 @@ from mlstdb.cli.connect import connect
 from mlstdb.cli.fetch import fetch
 from mlstdb.cli.update import update
 
-
-@click.group()
+@click.group(add_help_option=False)
 @click.version_option(version=__version__)
 @click.help_option("-h", "--help")
 def mlstdb():
@@ -19,14 +18,11 @@ def mlstdb():
     \b
     Recommended workflow:
     1. mlstdb connect --db pubmlst/pasteur    # Register credentials
-    2. mlstdb update # Update database
-
-    \b
-    Commands:
-        connect  Register with PubMLST or Pasteur databases
-        update   Download MLST schemes from curated APIs
-        
-        fetch    [ADVANCED] Explore and fetch custom schemes
+    2. mlstdb update --db pubmlst             # Update database
+    3. mlstdb fetch                           # [ADVANCED] Explore custom schemes
+    
+    Most users only need to use 'connect' and 'update' commands.
+    
     """
     pass
 
