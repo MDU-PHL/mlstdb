@@ -83,7 +83,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             # Inform user about next steps
             info("\nTo fix authentication issues:")
             info("1. You need to manually delete your credentials from the files above")
-            info("2. Run the script again to generate new credentials")
+            info("2. Run the command again to generate new credentials")
             
             # Offer to delete credentials
             if click.confirm("\nWould you like to delete credentials for this database?", default=False):
@@ -218,7 +218,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         if e.response.status_code == 403:
             error("\nAuthentication failed - permission denied!")
             info("\nTo fix permission issues:")
-            info("Run 'mlstdb fetch' to refresh your credentials for the database you are trying to access.")
+            info("Run 'mlstdb connect' to refresh or setup your credentials for the database you are trying to access.")
             info("Then try running this script again.")
             sys.exit(1)
         elif e.response.status_code == 404:

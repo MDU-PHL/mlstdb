@@ -87,11 +87,14 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
                     download_success = True
                 except Exception as e:
                     # Check for 401/403 errors specifically
-                    if '401 Client Error: Unauthorized' in str(e) or '403 Client Error: Forbidden' in str(e):
+                    if '401 Client Error: Unauthorised' in str(e) or '403 Client Error: Forbidden' in str(e):
                         error(f"Authentication error for {scheme}: {e}")
+                        error(f"======== Please make sure you have registered to {scheme} scheme within the {database} database. ========")
                         auth_errors = True
                     else:
                         error(f"Error downloading scheme {scheme}: {e}")
+                        info(f"======== Please make sure you have registered to {scheme} scheme within the {database} database. ========")
+                        
                     continue
             
             except Exception as e:
@@ -102,8 +105,9 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
         if auth_errors:
             error("\nAuthentication errors occurred during downloads.")
             info("\nTo fix authentication issues:")
-            info("1. Run 'mlstdb fetch' to refresh or setup your credentials")
-            info("2. Then run this command again")
+            info("1. Run 'mlstdb connect' to refresh or setup your credentials for the database you are trying to access.")
+            info("2. Please make sure you have registered to all the scheme within the database")            
+            info("3. Then run this command again")
             sys.exit(1)
 
         # Check if we have any schemes downloaded

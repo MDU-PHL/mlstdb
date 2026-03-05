@@ -45,7 +45,7 @@ test = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/himal2007/mlstdb#readme"
+Documentation = "https://MDU-PHL.github.io/mlstdb"
 Issues = "https://github.com/himal2007/mlstdb/issues"
 Source = "https://github.com/himal2007/mlstdb"
 
