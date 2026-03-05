@@ -5,7 +5,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/version.svg)](https://anaconda.org/bioconda/mlstdb)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/license.svg)](https://anaconda.org/bioconda/mlstdb)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/downloads.svg)](https://anaconda.org/bioconda/mlstdb)
 
 `mlstdb` is a Python package to update and manage the MLST database for the `mlst` tool using the PubMLST and BIGSdb Pasteur APIs. It is written to handle the OAuth2 authentication process that's required to access up-to-date MLST schemes available on these databases. This tool allows user to fetch MLST schemes, filter the schemes, and update the MLST database for the `mlst` tool.
