@@ -133,14 +133,7 @@ def register_tokens(db: str):
     
     # Message after registration
     click.secho("\n=== Registration Complete ===", fg="green", bold=True)
-    click.echo("\nThe script will now fetch MLST scheme data, which may take a while.")
-    click.echo("The process will download data from multiple databases and may take several minutes.")
     
-    if not click.confirm("\nDo you want to continue with data fetching now?", default=True):
-        info("You can run the script again later to fetch the data.")
-        sys.exit(0)
-    
-    # If user wants to continue, return the tokens
     return token, secret
 
 def get_config_dir() -> Path:
