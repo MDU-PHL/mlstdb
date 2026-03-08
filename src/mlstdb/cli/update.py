@@ -48,10 +48,13 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
 
         check_dir(directory)
         
+        # Track skipped schemes due to missing registration
+        skipped_schemes = []  # list of (scheme_name, database_name) tuples
+        
         # Track credential issues
-        auth_errors = False
+        # auth_errors = False
         download_success = False
-
+        
         # Process each scheme
         for line in tqdm(lines, desc="Downloading MLST schemes", unit="scheme"):
             parts = line.strip().split('\t')
@@ -68,12 +71,14 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
                     session_token, session_secret = retrieve_session_token(database.lower())
                 except ValueError as ve:
                     error(f"Error with credentials for {database}: {ve}")
-                    auth_errors = True
+                    skipped_schemes.append((scheme, database))
+                    # auth_errors = True
                     continue
 
                 if not session_token or not session_secret:
                     error(f"No valid session token found for {database}.")
-                    auth_errors = True
+                    skipped_schemes.append((scheme, database))
+                    # auth_errors = True
                     continue
 
                 scheme_dir = Path(directory) / scheme
@@ -88,27 +93,54 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
                 except Exception as e:
                     # Check for 401/403 errors specifically
                     if '401 Client Error: Unauthorised' in str(e) or '403 Client Error: Forbidden' in str(e):
-                        error(f"Authentication error for {scheme}: {e}")
-                        error(f"======== Please make sure you have registered to {scheme} scheme within the {database} database. ========")
-                        auth_errors = True
+                        error(f"Authentication error for [{scheme}]: {e}")
+                        error(f"======== Please make sure you have registered to [{scheme}] scheme within the {database} database. ========")
+                        skipped_schemes.append((scheme, database))
+                        # auth_errors = True
                     else:
-                        error(f"Error downloading scheme {scheme}: {e}")
-                        info(f"======== Please make sure you have registered to {scheme} scheme within the {database} database. ========")
-                        
+                        error(f"Error downloading scheme [{scheme}]: {e}")
+                        info(f"======== Please make sure you have registered to [{scheme}] scheme within the {database} database. ========")
+                        skipped_schemes.append((scheme, database))                        
                     continue
             
             except Exception as e:
-                error(f"Error downloading scheme {scheme}: {e}")
+                error(f"Error downloading scheme [{scheme}]: {e}")
                 continue
         
+        # Warn user about schemes that were skipped due to missing registration
+        if skipped_schemes:
+            click.secho(
+                "\nThe following schemes were not downloaded because you are not registered to them:",
+                fg="yellow"
+            )
+            for scheme_name, db_name in skipped_schemes:
+                click.secho(f"  - {scheme_name} from {db_name}", fg="yellow")
+
+            click.secho("\nFor the complete update, please ensure you have registered to the above schemes within their respective databases and then run this command again.", fg="yellow")
+            
+            click.secho("If you choose to continue without downloading these schemes, the BLAST database will be created with only the schemes you are registered to and have downloaded.", fg="yellow")
+            
+            if not download_success:
+                error("\nNo schemes were successfully downloaded. BLAST database creation skipped.")
+                sys.exit(1)
+
+            if not click.confirm(
+                "\nAre you sure you want to continue with BLAST database creation "
+                "with the schemes you are registered to and have downloaded? (y/n)",
+                default=False,
+                prompt_suffix=" "
+            ):
+                info("BLAST database creation cancelled.")
+                sys.exit(0)
+        
         # Exit early if we have authentication errors
-        if auth_errors:
-            error("\nAuthentication errors occurred during downloads.")
-            info("\nTo fix authentication issues:")
-            info("1. Run 'mlstdb connect' to refresh or setup your credentials for the database you are trying to access.")
-            info("2. Please make sure you have registered to all the scheme within the database")            
-            info("3. Then run this command again")
-            sys.exit(1)
+        # if auth_errors:
+        #     error("\nAuthentication errors occurred during downloads.")
+        #     info("\nTo fix authentication issues:")
+        #     info("1. Run 'mlstdb connect' to refresh or setup your credentials for the database you are trying to access.")
+        #     info("2. Please make sure you have registered to all the scheme within the database")            
+        #     info("3. Then run this command again")
+        #     sys.exit(1)
 
         # Check if we have any schemes downloaded
         scheme_dirs = [d for d in Path(directory).iterdir() if d.is_dir()]
