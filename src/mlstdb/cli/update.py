@@ -49,6 +49,13 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool, no_a
 
         check_dir(directory)
 
+        if no_auth:
+            click.secho(
+                "\nWarning: Using unauthenticated access. The database is only available up to "
+                "2024-12-31. Schemes created after this date may not be available.",
+                fg="yellow"
+            )
+
         skipped_schemes = []
         download_success = False
 

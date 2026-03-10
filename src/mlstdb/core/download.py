@@ -184,7 +184,8 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
             "download_date": download_date,
             "last_updated": last_updated if last_updated != 'Not found' else None,
             "source": db_type,
-            "API": url
+            "API": url,
+            "authenticated": not no_auth
         }
 
         # Save scheme info to JSON file
