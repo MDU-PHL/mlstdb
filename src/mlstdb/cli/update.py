@@ -20,7 +20,9 @@ from tqdm import tqdm
               help='Directory for BLAST database (default: blast)')
 @click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose logging for debugging')
-def update(input: str, directory: str, blast_directory: str, verbose: bool):
+@click.option('--no-auth', 'no_auth', is_flag=True, default=False,
+              help='Skip OAuth authentication and use unauthenticated requests. Schemes requiring authentication will be skipped.')
+def update(input: str, directory: str, blast_directory: str, verbose: bool, no_auth: bool):
     """
     Update MLST schemes and create BLAST database.
 
@@ -58,34 +60,43 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool):
 
             database, species, scheme_desc, scheme, url = parts
 
-            try:
-                client_key, client_secret = get_client_credentials(database.lower())
-                session_token, session_secret = retrieve_session_token(database.lower())
-            except ValueError as ve:
-                error(f"Error with credentials for {database}: {ve}")
-                skipped_schemes.append((scheme, database))
-                continue
+            if no_auth:
+                client_key = client_secret = session_token = session_secret = None
+            else:
+                try:
+                    client_key, client_secret = get_client_credentials(database.lower())
+                    session_token, session_secret = retrieve_session_token(database.lower())
+                except ValueError as ve:
+                    error(f"Error with credentials for {database}: {ve}")
+                    skipped_schemes.append((scheme, database))
+                    continue
 
-            if not session_token or not session_secret:
-                error(f"No valid session token found for {database}.")
-                skipped_schemes.append((scheme, database))
-                continue
+                if not session_token or not session_secret:
+                    error(f"No valid session token found for {database}.")
+                    skipped_schemes.append((scheme, database))
+                    continue
 
             scheme_dir = Path(directory) / scheme
             check_dir(str(scheme_dir))
 
             try:
                 get_mlst_files(url, str(scheme_dir), client_key, client_secret,
-                               session_token, session_secret, scheme, verbose=verbose)
+                               session_token, session_secret, scheme, verbose=verbose,
+                               no_auth=no_auth)
                 success(f"Successfully downloaded scheme: {scheme}")
                 download_success = True
             except Exception as e:
-                if '401 Client Error: Unauthorised' in str(e) or '403 Client Error: Forbidden' in str(e):
-                    error(f"Authentication error for [{scheme}]: {e}")
-                    error(f"Please make sure you have registered to [{scheme}] scheme within the {database} database.")
+                if '401 Client Error' in str(e) or '403 Client Error' in str(e):
+                    if no_auth:
+                        error(f"Scheme [{scheme}] requires authentication and cannot be downloaded with --no-auth.")
+                        info(f"Run without --no-auth to download authenticated schemes.")
+                    else:
+                        error(f"Authentication error for [{scheme}]: {e}")
+                        error(f"Please make sure you have registered to [{scheme}] scheme within the {database} database.")
                 else:
                     error(f"Error downloading scheme [{scheme}]: {e}")
-                    info(f"Please make sure you have registered to [{scheme}] scheme within the {database} database.")
+                    if not no_auth:
+                        info(f"Please make sure you have registered to [{scheme}] scheme within the {database} database.")
                 skipped_schemes.append((scheme, database))
 
         if skipped_schemes:

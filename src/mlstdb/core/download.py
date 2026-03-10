@@ -106,16 +106,19 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
 
 def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: str, 
                    session_token: str, session_secret: str, scheme_name: str, 
-                   verbose: bool = False) -> None:
+                   verbose: bool = False, no_auth: bool = False) -> None:
     """Download MLST data and save them in the given directory."""
-    session = OAuth1Session(
-        consumer_key=client_key,
-        consumer_secret=client_secret,
-        access_token=session_token,
-        access_token_secret=session_secret,
-    )
-    
-    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    if no_auth:
+        session = requests.Session()
+        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    else:
+        session = OAuth1Session(
+            consumer_key=client_key,
+            consumer_secret=client_secret,
+            access_token=session_token,
+            access_token_secret=session_secret,
+        )
+        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
@@ -125,6 +128,8 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         
         # Handle expired token (401)
         if response.status_code == 401:
+            if no_auth:
+                response.raise_for_status()  # Let caller handle the error
             if verbose:
                 info("Session token expired, attempting to refresh...")
             
@@ -210,11 +215,13 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         profiles_url = url + '/profiles_csv'
         profiles = session.get(profiles_url)
         profiles.raise_for_status()
-        profiles_file_path = os.path.join(directory, f"{scheme_name}. txt")
+        profiles_file_path = os.path.join(directory, f"{scheme_name}.txt")
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
                 
     except requests.exceptions.HTTPError as e:
+        if e.response.status_code in (401, 403) and no_auth:
+            raise  # Let caller handle — scheme will be skipped
         if e.response.status_code == 403:
             error("\nAuthentication failed - permission denied!")
             info("\nTo fix permission issues:")
