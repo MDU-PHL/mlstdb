@@ -123,6 +123,7 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
             sys.exit(1)
 
         success_count = 0
+        auth_skipped = []
         total_dbs = sum(1 for r in resources if 'databases' in r 
                        for _ in r['databases'])
         
@@ -136,14 +137,29 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
                         continue
                     
                     try:
-                        get_matching_schemes(database, match, exclude, 
+                        result = get_matching_schemes(database, match, exclude, 
                                            client_key, client_secret,
                                            session_token, session_secret,
                                            output_file, processed_file, verbose)
+                        if result:  # non-None return signals an auth skip
+                            auth_skipped.append(result)
                         success_count += 1
                     except Exception as e:
                         error(f"Error processing {database['description']}: {e}")
                         continue
+
+        if auth_skipped:
+            click.secho(
+                "\nThe following databases were skipped due to authentication issues:",
+                fg="yellow"
+            )
+            for db_name in auth_skipped:
+                click.secho(f"  - {db_name}", fg="yellow")
+            click.secho(
+                "\nPlease ensure you are registered in the database and have the necessary "
+                "permissions to access these schemes. Run 'mlstdb connect' to set up credentials.",
+                fg="yellow"
+            )
 
         # Delete processed_file if all databases were processed successfully
         if success_count == total_dbs:

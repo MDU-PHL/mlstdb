@@ -56,51 +56,25 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
             new_tokens = refresh_session_token(db, client_key, client_secret, verbose)
             
             if new_tokens:
-                info("\nSession token has been refreshed. Please run the command again.")
-                sys.exit(0)  # Exit cleanly after token refresh
-            else:
-                # If we can't get a new session token, raise the original 401 error
-                response.raise_for_status()
+                # Retry the request with the refreshed token
+                new_session_token, new_session_secret = new_tokens
+                retry_session = OAuth1Session(
+                    consumer_key=client_key,
+                    consumer_secret=client_secret,
+                    access_token=new_session_token,
+                    access_token_secret=new_session_secret,
+                )
+                retry_session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+                response = retry_session.get(url)
+                if verbose:
+                    print(f"Response code after token refresh: {response.status_code}, URL: {url}")
+            # Raise for any remaining errors (e.g. 401 if not registered for this scheme)
+            response.raise_for_status()
         
         response.raise_for_status()
         return response.json()
         
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:  # Only handle other 401/403 cases
-            config_dir = get_config_dir()
-            
-            error(f"\nAuthentication Failed! (Status code: {e.response.status_code})")
-            if e.response.status_code == 401:
-                info("This usually means your tokens have expired. Please check your credentials.")
-            else:
-                info("This usually means you lack permissions for this resource. Please check your credentials.")
-                
-            # Show credential locations
-            info("\nYour credentials are stored in:")
-            for cred_file in ["client_credentials", "session_tokens", "access_tokens"]:
-                info(f"- {config_dir}/{cred_file}")
-
-            # Inform user about next steps
-            info("\nTo fix authentication issues:")
-            info("1. You need to manually delete your credentials from the files above")
-            info("2. Run the command again to generate new credentials")
-            
-            # Offer to delete credentials
-            if click.confirm("\nWould you like to delete credentials for this database?", default=False):
-                try:
-                    # Use the db parameter from the main function
-                    db = get_db_type_from_url(url)
-                    remove_db_credentials(config_dir, db)
-                    info("\nCredentials deleted successfully.")
-                    info("Please run the command again to generate new credentials.")
-                    sys.exit(1)
-                except Exception as del_error:
-                    error(f"Failed to delete credentials: {del_error}")
-                    sys.exit(1)
-            
-            error("Exiting. Please fix credentials and try again")
-            sys.exit(1)
-
         raise
 
 
@@ -376,11 +350,9 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
                                      session_token, session_secret, verbose=verbose)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                print(f"The token does not allow access to the `{db['description']}` database. "
-                      f"So, the `{db['description']}` database will be skipped.\n"
-                      "To download the data, please ensure your account has access to this database.")
+                info(f"Skipping '{db['description']}': not registered or insufficient permissions.")
                 save_processed_database(processed_file, db['description'])
-                return
+                return db['description']
             elif e.response.status_code == 404:
                 print(f"The resource `{db['href']}` for the `{db['description']}` database was not found (404). "
                       "Skipping this database.")
