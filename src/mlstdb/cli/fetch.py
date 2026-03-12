@@ -30,8 +30,8 @@ from mlstdb.utils import error, success, info
               help='Resume processing from where it stopped')
 @click.option('--no-auth', is_flag=True,
               help='Use unauthenticated access (faster, works for public APIs)')
-@click.option('--threads', '-t', default=4, show_default=True,
-              help='Number of parallel threads for fetching schemes')
+@click.option('--threads', '-t', default=1, show_default=True,
+              help='Number of parallel threads for fetching schemes, max: 4 to avoid too many simultaneous requests')
 @click.option('--verbose', '-v', is_flag=True, 
               help='Enable verbose logging for debugging')
 def fetch(db, exclude, match, scheme_uris, filter, resume, no_auth, threads, verbose):

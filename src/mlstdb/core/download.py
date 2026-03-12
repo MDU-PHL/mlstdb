@@ -97,19 +97,16 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret,
 
 def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: str, 
                    session_token: str, session_secret: str, scheme_name: str, 
-                   verbose: bool = False, no_auth: bool = False) -> None:
-    """Download MLST data and save them in the given directory."""
-    if no_auth:
-        session = requests.Session()
-        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-    else:
-        session = OAuth1Session(
-            consumer_key=client_key,
-            consumer_secret=client_secret,
-            access_token=session_token,
-            access_token_secret=session_secret,
-        )
-        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+                   verbose: bool = False, no_auth: bool = False,
+                   session=None, show_progress: bool = True) -> None:
+    """Download MLST data and save them in the given directory.
+    
+    If a pre-built session is provided, it will be reused for connection pooling.
+    Set show_progress=False to suppress the per-locus tqdm bar (useful in parallel mode).
+    """
+    if session is None:
+        session = create_session(client_key, client_secret, session_token, 
+                                 session_secret, no_auth=no_auth)
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
@@ -194,8 +191,9 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         with open(db_version_path, 'w') as version_file:
             version_file.write(f"{last_updated}\n")
 
-        # Download loci with progress bar
-        for loci in tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus"):
+        # Download loci
+        loci_iter = tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus") if show_progress else mlst_scheme['loci']
+        for loci in loci_iter:
             name = loci. split('/')[-1]
             loci_fasta = session.get(loci + '/alleles_fasta')
             loci_fasta.raise_for_status()
