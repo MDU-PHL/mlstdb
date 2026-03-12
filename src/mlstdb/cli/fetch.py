@@ -1,12 +1,13 @@
 import click
 from pathlib import Path
 import importlib.resources
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import configparser
 import sys
 import os
 from mlstdb.core.auth import register_tokens, setup_client_credentials, remove_db_credentials
-from mlstdb.core.download import (fetch_resources, get_matching_schemes, 
+from mlstdb.core.download import (fetch_resources, get_matching_schemes, create_session,
                                 sanitise_output, clear_file, 
                                 load_processed_databases,save_processed_database, load_scheme_uris)
 from mlstdb.core.config import get_config_dir, BASE_API
@@ -27,9 +28,13 @@ from mlstdb.utils import error, success, info
               help='Filter species or schemes using a wildcard pattern')
 @click.option('--resume', '-r', is_flag=True, 
               help='Resume processing from where it stopped')
+@click.option('--no-auth', is_flag=True,
+              help='Use unauthenticated access (faster, works for public APIs)')
+@click.option('--threads', '-t', default=4, show_default=True,
+              help='Number of parallel threads for fetching schemes')
 @click.option('--verbose', '-v', is_flag=True, 
               help='Enable verbose logging for debugging')
-def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
+def fetch(db, exclude, match, scheme_uris, filter, resume, no_auth, threads, verbose):
     """[ADVANCED] BIGSdb Scheme Explorer and Fetcher
     
     ⚠️  ADVANCED USE ONLY - For scheme exploration and custom workflows. 
@@ -73,37 +78,50 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
                 default='pubmlst'
             )
         
-        # Get client credentials
-        config_dir = get_config_dir()
-        client_creds_file = config_dir / "client_credentials"
-        session_tokens_file = config_dir / "session_tokens"
+        client_key = None
+        client_secret = None
+        session_token = None
+        session_secret = None
 
-        # Check if credentials exist, if not setup
-        if not client_creds_file.exists() or not session_tokens_file.exists():
-            register_tokens(db)
+        if no_auth:
+            info("Using unauthenticated access (no OAuth)")
+            http_session = create_session(no_auth=True)
+        else:
+            # Get client credentials
+            config_dir = get_config_dir()
+            client_creds_file = config_dir / "client_credentials"
+            session_tokens_file = config_dir / "session_tokens"
 
-        # Get credentials
-        config = configparser.ConfigParser(interpolation=None)
-        
-        # Read client credentials
-        config.read(client_creds_file)
-        if not config.has_section(db):
-            error(f"No client credentials found for {db}")
-            register_tokens(db)
+            # Check if credentials exist, if not setup
+            if not client_creds_file.exists() or not session_tokens_file.exists():
+                register_tokens(db)
+
+            # Get credentials
+            config = configparser.ConfigParser(interpolation=None)
+            
+            # Read client credentials
             config.read(client_creds_file)
-        
-        client_key = config[db]["client_id"]
-        client_secret = config[db]["client_secret"]
+            if not config.has_section(db):
+                error(f"No client credentials found for {db}")
+                register_tokens(db)
+                config.read(client_creds_file)
+            
+            client_key = config[db]["client_id"]
+            client_secret = config[db]["client_secret"]
 
-        # Read session tokens
-        config.read(session_tokens_file)
-        if not config.has_section(db):
-            error(f"No session token found for {db}")
-            register_tokens(db)
+            # Read session tokens
             config.read(session_tokens_file)
-        
-        session_token = config[db]["token"]
-        session_secret = config[db]["secret"]
+            if not config.has_section(db):
+                error(f"No session token found for {db}")
+                register_tokens(db)
+                config.read(session_tokens_file)
+            
+            session_token = config[db]["token"]
+            session_secret = config[db]["secret"]
+
+            # Create a single reusable OAuth session
+            http_session = create_session(client_key, client_secret, 
+                                          session_token, session_secret)
 
         output_file = f"mlst_schemes_{db}.tab"
         processed_file = f"processed_dbs_{db}.tab"
@@ -116,37 +134,68 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, verbose):
         
         base_uri = BASE_API[db]
         resources = fetch_resources(base_uri, client_key, client_secret, 
-                                  session_token, session_secret, verbose)
+                                  session_token, session_secret, verbose,
+                                  session=http_session)
         
         if not resources:
             error("No resources found")
             sys.exit(1)
 
-        success_count = 0
-        auth_skipped = []
-        total_dbs = sum(1 for r in resources if 'databases' in r 
-                       for _ in r['databases'])
-        
-        for resource in tqdm(resources, desc="Processing resources"):
+        # Collect all databases to process
+        all_databases = []
+        for resource in resources:
             if 'databases' in resource:
                 for database in resource['databases']:
                     if database['description'] in processed_dbs:
                         if verbose:
                             info(f"Skipping already processed database: {database['description']}")
-                        success_count += 1
                         continue
-                    
-                    try:
-                        result = get_matching_schemes(database, match, exclude, 
-                                           client_key, client_secret,
-                                           session_token, session_secret,
-                                           output_file, processed_file, verbose)
-                        if result:  # non-None return signals an auth skip
-                            auth_skipped.append(result)
-                        success_count += 1
-                    except Exception as e:
-                        error(f"Error processing {database['description']}: {e}")
-                        continue
+                    all_databases.append(database)
+
+        total_dbs = len(all_databases) + len(processed_dbs)
+        success_count = len(processed_dbs)
+        auth_skipped = []
+        all_scheme_lines = []
+
+        # Process databases in parallel
+        info(f"Processing {len(all_databases)} databases using {threads} threads...")
+        
+        def _process_db(database):
+            """Worker function for parallel database processing."""
+            return get_matching_schemes(
+                database, match, exclude,
+                client_key, client_secret,
+                session_token, session_secret,
+                verbose=verbose,
+                session=http_session,
+            )
+
+        with ThreadPoolExecutor(max_workers=threads) as executor:
+            future_to_db = {
+                executor.submit(_process_db, database): database
+                for database in all_databases
+            }
+            for future in tqdm(as_completed(future_to_db), 
+                              total=len(all_databases),
+                              desc="Processing databases"):
+                database = future_to_db[future]
+                try:
+                    result = future.result()
+                    if result.get('auth_skipped'):
+                        auth_skipped.append(result['auth_skipped'])
+                    if result.get('matching_schemes'):
+                        all_scheme_lines.extend(result['matching_schemes'])
+                    success_count += 1
+                    # Track progress for resume
+                    save_processed_database(processed_file, database['description'])
+                except Exception as e:
+                    error(f"Error processing {database['description']}: {e}")
+                    continue
+
+        # Write all matching schemes to the output file at once
+        if all_scheme_lines:
+            with open(output_file, 'a') as f:
+                f.writelines(all_scheme_lines)
 
         if auth_skipped:
             click.secho(

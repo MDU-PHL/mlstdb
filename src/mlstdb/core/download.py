@@ -24,19 +24,36 @@ def get_db_type_from_url(url: str) -> str:
     else:
         raise ValueError(f"Unable to determine database type from URL: {url}")
 
-def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
-    """Fetch JSON from URL with OAuth authentication and session token refresh."""
+
+def create_session(client_key=None, client_secret=None, session_token=None, 
+                   session_secret=None, no_auth=False):
+    """Create a reusable HTTP session (OAuth or plain)."""
+    if no_auth:
+        session = requests.Session()
+    else:
+        session = OAuth1Session(
+            consumer_key=client_key,
+            consumer_secret=client_secret,
+            access_token=session_token,
+            access_token_secret=session_secret,
+        )
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    return session
+
+
+def fetch_json(url, client_key, client_secret, session_token, session_secret, 
+               verbose=False, session=None):
+    """Fetch JSON from URL with optional OAuth authentication.
+    
+    If a pre-built session is provided, it will be reused for connection pooling.
+    Otherwise a new session is created per call (legacy behaviour).
+    """
     if verbose:
         print(f"Fetching JSON from {url}")
     
-    # Initialize session with current token
-    session = OAuth1Session(
-        consumer_key=client_key,
-        consumer_secret=client_secret,
-        access_token=session_token,
-        access_token_secret=session_secret,
-    )
-    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    # Use provided session or create a new one
+    if session is None:
+        session = create_session(client_key, client_secret, session_token, session_secret)
 
     try:
         response = session.get(url)
@@ -207,10 +224,12 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
             error(f"Resource not found at URL: {url}")
         raise
 
-def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret, verbose=False):
+def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret, 
+                    verbose=False, session=None):
     if verbose:
         print(f"Fetching resources from {base_uri}")
-    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret, verbose)
+    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret, 
+                      verbose, session=session)
 
 def clear_file(file_path):
     """Clear the contents of a file or create it if it doesn't exist."""
@@ -338,8 +357,21 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
 
 
 def get_matching_schemes(db, match, exclude, client_key, client_secret, 
-                        session_token, session_secret, output_file, processed_file, verbose=False):
-    """Get matching schemes from the database."""
+                        session_token, session_secret, output_file=None, processed_file=None, 
+                        verbose=False, session=None):
+    """Get matching schemes from the database.
+    
+    Returns a dict with:
+      - 'auth_skipped': db description if skipped due to auth (or None)
+      - 'matching_schemes': list of tab-delimited scheme strings
+      - 'db_description': the database description
+    """
+    result = {
+        'auth_skipped': None,
+        'matching_schemes': [],
+        'db_description': db['description'],
+    }
+
     # Check if this is a sequence definition database
     is_seqdef = ('seqdef' in db['name'].lower() or 
                  'definitions' in db.get('description', '').lower())
@@ -347,30 +379,34 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
     if is_seqdef:
         try:
             db_attributes = fetch_json(db['href'], client_key, client_secret, 
-                                     session_token, session_secret, verbose=verbose)
+                                     session_token, session_secret, verbose=verbose,
+                                     session=session)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
                 info(f"Skipping '{db['description']}': not registered or insufficient permissions.")
-                save_processed_database(processed_file, db['description'])
-                return db['description']
+                if processed_file:
+                    save_processed_database(processed_file, db['description'])
+                result['auth_skipped'] = db['description']
+                return result
             elif e.response.status_code == 404:
                 print(f"The resource `{db['href']}` for the `{db['description']}` database was not found (404). "
                       "Skipping this database.")
-                save_processed_database(processed_file, db['description'])
-                return
+                if processed_file:
+                    save_processed_database(processed_file, db['description'])
+                return result
             else:
                 raise
         
         if not db_attributes or 'schemes' not in db_attributes:
-            save_processed_database(processed_file, db['description'])
-            return
+            if processed_file:
+                save_processed_database(processed_file, db['description'])
+            return result
         
         schemes = fetch_json(db_attributes['schemes'], client_key, client_secret, 
-                           session_token, session_secret, verbose=verbose)
+                           session_token, session_secret, verbose=verbose,
+                           session=session)
              
         if schemes and 'schemes' in schemes:
-            matching_schemes = []
-            
             # Determine database type from URL instead of filename
             db_type = "pasteur" if "pasteur.fr" in db['href'] else "pubmlst"
 
@@ -380,13 +416,14 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
                 if exclude and re.search(exclude, scheme['description'], flags=0):
                     continue
                 # Add database type as first column
-                matching_schemes.append(f"{db_type}\t{db['description']}\t{scheme['description']}\t{scheme['scheme']}\n")
-            
-            if matching_schemes:  # Only write to file if we found matching schemes
-                with open(output_file, 'a') as f:
-                    f.writelines(matching_schemes)
+                result['matching_schemes'].append(
+                    f"{db_type}\t{db['description']}\t{scheme['description']}\t{scheme['scheme']}\n"
+                )
         
-        save_processed_database(processed_file, db['description'])
+        if processed_file:
+            save_processed_database(processed_file, db['description'])
+    
+    return result
 
 def create_blast_db(input_dir: str, blast_directory: str, verbose: bool = False) -> None:
     """Create BLAST database from MLST schemes."""
