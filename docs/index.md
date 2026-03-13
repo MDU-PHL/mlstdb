@@ -4,13 +4,13 @@
 [![PyPI](https://img.shields.io/pypi/v/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![Bioconda](https://anaconda.org/bioconda/mlstdb/badges/version.svg)](https://anaconda.org/bioconda/mlstdb)
 
-**Keep your [`mlst`](https://github.com/tseemann/mlst) databases up to date — in two commands.**
+**Keep your [`mlst`](https://github.com/tseemann/mlst) databases up to date**
 
 `mlstdb` handles the OAuth authentication required to access [PubMLST](https://pubmlst.org/) and [BIGSdb Pasteur](https://bigsdb.pasteur.fr/) APIs, downloads the latest MLST schemes, and builds a ready-to-use BLAST database for the `mlst` tool.
 
 ---
 
-## Why mlstdb?
+## Why `mlstdb`?
 
 The `mlst` tool ships with a bundled database, but MLST schemes are continuously updated on PubMLST and Pasteur. Keeping your local database current used to mean manually navigating OAuth flows and downloading files. `mlstdb` automates all of that.
 
