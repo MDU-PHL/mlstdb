@@ -6,11 +6,12 @@ import requests
 import subprocess
 import configparser
 import json
+from datetime import datetime
 from pathlib import Path
 from tqdm import tqdm
 from rauth import OAuth1Session, OAuth1Service
 from mlstdb.core.config import get_config_dir, BASE_API, DB_MAPPING
-from mlstdb.core.auth import remove_db_credentials, register_tokens
+from mlstdb.core.auth import remove_db_credentials, register_tokens, refresh_session_token
 from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
@@ -23,19 +24,36 @@ def get_db_type_from_url(url: str) -> str:
     else:
         raise ValueError(f"Unable to determine database type from URL: {url}")
 
-def fetch_json(url, client_key, client_secret, session_token, session_secret, verbose=False):
-    """Fetch JSON from URL with OAuth authentication and session token refresh."""
+
+def create_session(client_key=None, client_secret=None, session_token=None, 
+                   session_secret=None, no_auth=False):
+    """Create a reusable HTTP session (OAuth or plain)."""
+    if no_auth:
+        session = requests.Session()
+    else:
+        session = OAuth1Session(
+            consumer_key=client_key,
+            consumer_secret=client_secret,
+            access_token=session_token,
+            access_token_secret=session_secret,
+        )
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    return session
+
+
+def fetch_json(url, client_key, client_secret, session_token, session_secret, 
+               verbose=False, session=None):
+    """Fetch JSON from URL with optional OAuth authentication.
+    
+    If a pre-built session is provided, it will be reused for connection pooling.
+    Otherwise a new session is created per call (legacy behaviour).
+    """
     if verbose:
         print(f"Fetching JSON from {url}")
     
-    # Initialize session with current token
-    session = OAuth1Session(
-        consumer_key=client_key,
-        consumer_secret=client_secret,
-        access_token=session_token,
-        access_token_secret=session_secret,
-    )
-    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    # Use provided session or create a new one
+    if session is None:
+        session = create_session(client_key, client_secret, session_token, session_secret)
 
     try:
         response = session.get(url)
@@ -48,123 +66,82 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret, ve
         
         # Handle 401 Unauthorised error - try once to refresh token
         if response.status_code == 401:
-            info("Invalid session token. Requesting new one...")
-            
             # Determine which database we're working with
             db = get_db_type_from_url(url)
             
-            # Get new session token using existing credentials
-            config = configparser.ConfigParser(interpolation=None)
-            access_tokens_file = get_config_dir() / "access_tokens"
+            # Use the new refresh_session_token function
+            new_tokens = refresh_session_token(db, client_key, client_secret, verbose)
             
-            # Read access tokens
-            config.read(access_tokens_file)
-            access_token = config[db]["token"]
-            access_secret = config[db]["secret"]
-            
-            # Initialize OAuth service
-            service = OAuth1Service(
-                name="MLSTdb downloader",
-                consumer_key=client_key,
-                consumer_secret=client_secret,
-                request_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_request_token",
-                access_token_url=f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_access_token",
-                base_url=BASE_API[db],
-            )
-            
-            # Get new session token
-            url_session = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_session_token"
-            session_request = OAuth1Session(
-                client_key,
-                client_secret,
-                access_token=access_token,
-                access_token_secret=access_secret,
-            )
-            session_request.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-            
-            r = session_request.get(url_session)
-            if r.status_code == 200:
-                new_token = r.json()["oauth_token"]
-                new_secret = r.json()["oauth_token_secret"]
-                
-                # Save new session token
-                config = configparser.ConfigParser(interpolation=None)
-                session_tokens_file = get_config_dir() / "session_tokens"
-                if session_tokens_file.exists():
-                    config.read(session_tokens_file)
-                config[db] = {"token": new_token, "secret": new_secret}
-                with open(session_tokens_file, "w") as configfile:
-                    config.write(configfile)
-                
+            if new_tokens:
+                # Retry the request with the refreshed token
+                new_session_token, new_session_secret = new_tokens
+                retry_session = OAuth1Session(
+                    consumer_key=client_key,
+                    consumer_secret=client_secret,
+                    access_token=new_session_token,
+                    access_token_secret=new_session_secret,
+                )
+                retry_session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+                response = retry_session.get(url)
                 if verbose:
-                    success("New session token obtained and saved")
-                
-                info("\nSession token has been refreshed. Please run the command again.")
-                sys.exit(0)  # Exit cleanly after token refresh
-            else:
-                # If we can't get a new session token, raise the original 401 error
-                response.raise_for_status()
+                    print(f"Response code after token refresh: {response.status_code}, URL: {url}")
+            # Raise for any remaining errors (e.g. 401 if not registered for this scheme)
+            response.raise_for_status()
         
         response.raise_for_status()
         return response.json()
         
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code in [401, 403]:  # Only handle other 401/403 cases
-            config_dir = get_config_dir()
-            
-            error(f"\nAuthentication Failed! (Status code: {e.response.status_code})")
-            if e.response.status_code == 401:
-                info("This usually means your tokens have expired. Please check your credentials.")
-            else:
-                info("This usually means you lack permissions for this resource. Please check your credentials.")
-                
-            # Show credential locations
-            info("\nYour credentials are stored in:")
-            for cred_file in ["client_credentials", "session_tokens", "access_tokens"]:
-                info(f"- {config_dir}/{cred_file}")
-
-            # Inform user about next steps
-            info("\nTo fix authentication issues:")
-            info("1. You need to manually delete your credentials from the files above")
-            info("2. Run the script again to generate new credentials")
-            
-            # Offer to delete credentials
-            if click.confirm("\nWould you like to delete credentials for this database?", default=False):
-                try:
-                    # Use the db parameter from the main function
-                    db = get_db_type_from_url(url)
-                    remove_db_credentials(config_dir, db)
-                    info("\nCredentials deleted successfully.")
-                    info("Please run the command again to generate new credentials.")
-                    sys.exit(1)
-                except Exception as del_error:
-                    error(f"Failed to delete credentials: {del_error}")
-                    sys.exit(1)
-            
-            error("Exiting. Please fix credentials and try again")
-            sys.exit(1)
-
         raise
 
 
-def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str, 
+def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: str, 
                    session_token: str, session_secret: str, scheme_name: str, 
-                   verbose: bool = False) -> None:
-    """Download MLST data and save them in the given directory."""
-    session = OAuth1Session(
-        consumer_key=client_key,
-        consumer_secret=client_secret,
-        access_token=session_token,
-        access_token_secret=session_secret,
-    )
+                   verbose: bool = False, no_auth: bool = False,
+                   session=None, show_progress: bool = True) -> None:
+    """Download MLST data and save them in the given directory.
     
-    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+    If a pre-built session is provided, it will be reused for connection pooling.
+    Set show_progress=False to suppress the per-locus tqdm bar (useful in parallel mode).
+    """
+    if session is None:
+        session = create_session(client_key, client_secret, session_token, 
+                                 session_secret, no_auth=no_auth)
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)    
+        response = session.get(url)
+        
+        # Handle expired token (401)
+        if response.status_code == 401:
+            if no_auth:
+                response.raise_for_status()  # Let caller handle the error
+            if verbose:
+                info("Session token expired, attempting to refresh...")
+            
+            # Get database type from URL    
+            db = get_db_type_from_url(url)
+            
+            # Use the new refresh_session_token function
+            new_tokens = refresh_session_token(db, client_key, client_secret, verbose)
+            
+            if new_tokens:
+                # Retry with new token
+                session_token, session_secret = new_tokens
+                session = OAuth1Session(
+                    consumer_key=client_key,
+                    consumer_secret=client_secret,
+                    access_token=session_token,
+                    access_token_secret=session_secret,
+                )
+                session.headers.update({"User-Agent":  f"mlstdb/{__version__}"})
+                response = session.get(url)
+            else:
+                error("Failed to refresh session token")
+                sys. exit(1)
+        
         response.raise_for_status()
         mlst_scheme = response.json()
         
@@ -172,43 +149,52 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
             info(f"Retrieved MLST scheme: {mlst_scheme}")
 
         # Extract scheme metadata
-        db_version = mlst_scheme.get('last_added', mlst_scheme. get('last_updated', 'Not found'))
-        if db_version is None:
-            db_version = 'No version information available'
-        info(f"Database version: {db_version}")
-
-        # Save database version to a file
-        db_version_path = os.path.join(directory, 'database_version.txt')
-        with open(db_version_path, 'w') as version_file:
-            version_file.write(db_version + '\n')
+        last_added = mlst_scheme.get('last_added', mlst_scheme. get('last_updated', 'Not found'))
+        if last_added is None:
+            last_added = 'No version information available'
         
+        last_updated = mlst_scheme.get('last_updated', last_added)
         locus_count = mlst_scheme.get('locus_count', len(mlst_scheme.get('loci', [])))
-        last_updated = mlst_scheme.get('last_updated', db_version)
+        download_date = datetime.now().strftime('%Y-%m-%d')
+
+        info(f"Scheme name: {scheme_name}")
+        info(f"Scheme last updated: {last_updated}")
+        info(f"Download date: {download_date}")
 
         # Determine database type from URL
         db_type = get_db_type_from_url(url)
 
         # Create scheme info JSON
         scheme_info = {
-            "name": scheme_name,
-            "alleles": locus_count,
-            "date": last_updated if last_updated != 'Not found' else None,
+            "name":  scheme_name,
+            "description": mlst_scheme.get('description'),
+            "locus": locus_count,
+            "download_date": download_date,
+            "last_updated": last_updated if last_updated != 'Not found' else None,
             "source": db_type,
-            "API": url
+            "API": url,
+            "authenticated": not no_auth
         }
 
         # Save scheme info to JSON file
-        scheme_info_path = os.path.join(directory, f'{scheme_name}_info.json')
+        scheme_info_path = os.path. join(directory, f'{scheme_name}_info.json')
         with open(scheme_info_path, 'w') as info_file:
             json.dump(scheme_info, info_file, indent=2)
-            info_file.write('\n')
+            info_file.write('\n')  # Add trailing newline
 
         if verbose:
             info(f"Scheme info saved to {scheme_info_path}")
 
-        # Download loci with progress bar
-        for loci in tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus"):
-            name = loci.split('/')[-1]
+        # Keep database_version.txt for backwards compatibility
+        # This can be removed in a future version
+        db_version_path = os.path.join(directory, 'database_version.txt')
+        with open(db_version_path, 'w') as version_file:
+            version_file.write(f"{last_updated}\n")
+
+        # Download loci
+        loci_iter = tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus") if show_progress else mlst_scheme['loci']
+        for loci in loci_iter:
+            name = loci. split('/')[-1]
             loci_fasta = session.get(loci + '/alleles_fasta')
             loci_fasta.raise_for_status()
             loci_file_name = os.path.join(directory, name + '.tfa')
@@ -222,42 +208,26 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         profiles_file_path = os.path.join(directory, f"{scheme_name}.txt")
         with open(profiles_file_path, 'w') as f:
             f.write(profiles.text)
-            
-        # Handle expired token (401)
-        if response.status_code == 401:
-            if verbose:
-                info("Session token expired, attempting to refresh...")
-            # Get database type from URL    
-            db = 'pubmlst' if 'pubmlst.org' in url else 'pasteur'
-            
-            # Register new tokens
-            new_token, new_secret = register_tokens(db)
-            
-            # Retry with new token
-            session = OAuth1Session(
-                consumer_key=client_key,
-                consumer_secret=client_secret,
-                access_token=new_token,
-                access_token_secret=new_secret,
-            )
-            session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-            response = session.get(url)
                 
     except requests.exceptions.HTTPError as e:
+        if e.response.status_code in (401, 403) and no_auth:
+            raise  # Let caller handle — scheme will be skipped
         if e.response.status_code == 403:
             error("\nAuthentication failed - permission denied!")
             info("\nTo fix permission issues:")
-            info("Run 'mlstdb fetch' to refresh your credentials for the database you are trying to access.")
+            info("Run 'mlstdb connect' to refresh or setup your credentials for the database you are trying to access.")
             info("Then try running this script again.")
             sys.exit(1)
         elif e.response.status_code == 404:
             error(f"Resource not found at URL: {url}")
         raise
 
-def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret, verbose=False):
+def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret, 
+                    verbose=False, session=None):
     if verbose:
         print(f"Fetching resources from {base_uri}")
-    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret, verbose)
+    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret, 
+                      verbose, session=session)
 
 def clear_file(file_path):
     """Clear the contents of a file or create it if it doesn't exist."""
@@ -385,8 +355,21 @@ def sanitise_output(output_file: str, scheme_uris_file: str, filter_pattern: str
 
 
 def get_matching_schemes(db, match, exclude, client_key, client_secret, 
-                        session_token, session_secret, output_file, processed_file, verbose=False):
-    """Get matching schemes from the database."""
+                        session_token, session_secret, output_file=None, processed_file=None, 
+                        verbose=False, session=None):
+    """Get matching schemes from the database.
+    
+    Returns a dict with:
+      - 'auth_skipped': db description if skipped due to auth (or None)
+      - 'matching_schemes': list of tab-delimited scheme strings
+      - 'db_description': the database description
+    """
+    result = {
+        'auth_skipped': None,
+        'matching_schemes': [],
+        'db_description': db['description'],
+    }
+
     # Check if this is a sequence definition database
     is_seqdef = ('seqdef' in db['name'].lower() or 
                  'definitions' in db.get('description', '').lower())
@@ -394,32 +377,34 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
     if is_seqdef:
         try:
             db_attributes = fetch_json(db['href'], client_key, client_secret, 
-                                     session_token, session_secret, verbose=verbose)
+                                     session_token, session_secret, verbose=verbose,
+                                     session=session)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 401:
-                print(f"The token does not allow access to the `{db['description']}` database. "
-                      f"So, the `{db['description']}` database will be skipped.\n"
-                      "To download the data, please ensure your account has access to this database.")
-                save_processed_database(processed_file, db['description'])
-                return
+                info(f"Skipping '{db['description']}': not registered or insufficient permissions.")
+                if processed_file:
+                    save_processed_database(processed_file, db['description'])
+                result['auth_skipped'] = db['description']
+                return result
             elif e.response.status_code == 404:
                 print(f"The resource `{db['href']}` for the `{db['description']}` database was not found (404). "
                       "Skipping this database.")
-                save_processed_database(processed_file, db['description'])
-                return
+                if processed_file:
+                    save_processed_database(processed_file, db['description'])
+                return result
             else:
                 raise
         
         if not db_attributes or 'schemes' not in db_attributes:
-            save_processed_database(processed_file, db['description'])
-            return
+            if processed_file:
+                save_processed_database(processed_file, db['description'])
+            return result
         
         schemes = fetch_json(db_attributes['schemes'], client_key, client_secret, 
-                           session_token, session_secret, verbose=verbose)
+                           session_token, session_secret, verbose=verbose,
+                           session=session)
              
         if schemes and 'schemes' in schemes:
-            matching_schemes = []
-            
             # Determine database type from URL instead of filename
             db_type = "pasteur" if "pasteur.fr" in db['href'] else "pubmlst"
 
@@ -429,13 +414,14 @@ def get_matching_schemes(db, match, exclude, client_key, client_secret,
                 if exclude and re.search(exclude, scheme['description'], flags=0):
                     continue
                 # Add database type as first column
-                matching_schemes.append(f"{db_type}\t{db['description']}\t{scheme['description']}\t{scheme['scheme']}\n")
-            
-            if matching_schemes:  # Only write to file if we found matching schemes
-                with open(output_file, 'a') as f:
-                    f.writelines(matching_schemes)
+                result['matching_schemes'].append(
+                    f"{db_type}\t{db['description']}\t{scheme['description']}\t{scheme['scheme']}\n"
+                )
         
-        save_processed_database(processed_file, db['description'])
+        if processed_file:
+            save_processed_database(processed_file, db['description'])
+    
+    return result
 
 def create_blast_db(input_dir: str, blast_directory: str, verbose: bool = False) -> None:
     """Create BLAST database from MLST schemes."""

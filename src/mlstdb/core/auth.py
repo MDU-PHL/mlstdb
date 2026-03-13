@@ -1,8 +1,9 @@
 import configparser
 import click
+import os
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 from rauth import OAuth1Service, OAuth1Session
 from mlstdb.core.config import get_config_dir, BASE_API, BASE_WEB, DB_MAPPING
 from mlstdb.utils import error, success, info
@@ -30,7 +31,8 @@ def setup_client_credentials(site: str) -> Tuple[str, str]:
 
     config[site] = {"client_id": client_id, "client_secret": client_secret}
     
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     success(f"\nClient credentials saved to {file_path}")
     return client_id, client_secret
@@ -67,7 +69,7 @@ def register_tokens(db: str):
     success("Temporary token received")
     
     # Get access token
-    click.secho("\nAuthorization Required", fg="yellow", bold=True)
+    click.secho("\nAuthorisation Required", fg="yellow", bold=True)
     info(
         "\nPlease open this URL in your browser:\n"
         f"{BASE_WEB[db]}?db={DB_MAPPING[db]}&page=authorizeClient&oauth_token={request_token}"
@@ -87,7 +89,7 @@ def register_tokens(db: str):
         error(f"Failed to get access token: {r.json()['message']}")
         sys.exit(1)
         
-    access_token = r.json()["oauth_token"]
+    access_token = r. json()["oauth_token"]
     access_secret = r.json()["oauth_token_secret"]
     
     # Save access token
@@ -96,7 +98,8 @@ def register_tokens(db: str):
     if file_path.exists():
         config.read(file_path)
     config[db] = {"token": access_token, "secret": access_secret}
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     success(f"\nAccess token saved to {file_path}")
 
@@ -118,29 +121,23 @@ def register_tokens(db: str):
         sys.exit(1)
         
     token = r.json()["oauth_token"]
-    secret = r.json()["oauth_token_secret"]
+    secret = r. json()["oauth_token_secret"]
     
     # Save session token
-    config = configparser.ConfigParser(interpolation=None)
+    config = configparser. ConfigParser(interpolation=None)
     file_path = get_config_dir() / "session_tokens"
     if file_path.exists():
         config.read(file_path)
     config[db] = {"token": token, "secret": secret}
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     
     success(f"\nSession token saved to {file_path}")
     
     # Message after registration
     click.secho("\n=== Registration Complete ===", fg="green", bold=True)
-    click.echo("\nThe script will now fetch MLST scheme data, which may take a while.")
-    click.echo("The process will download data from multiple databases and may take several minutes.")
     
-    if not click.confirm("\nDo you want to continue with data fetching now?", default=True):
-        info("You can run the script again later to fetch the data.")
-        sys.exit(0)
-    
-    # If user wants to continue, return the tokens
     return token, secret
 
 def get_config_dir() -> Path:
@@ -171,7 +168,7 @@ def remove_db_credentials(config_dir: Path, db: str) -> None:
             config = configparser.ConfigParser(interpolation=None)
             config.read(file_path)
             if db in config:
-                config.remove_section(db)
+                config. remove_section(db)
                 with open(file_path, 'w') as f:
                     config.write(f)
                 success(f"Removed {db} credentials from {file_name}")
@@ -181,10 +178,187 @@ def retrieve_session_token(key_name: str) -> Tuple[str, str]:
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "session_tokens"
     
-    if file_path.is_file():
+    if file_path. is_file():
         config.read(file_path)
         if config.has_section(key_name):
             return (config[key_name]["token"], 
                    config[key_name]["secret"])
     
     return None, None
+
+def test_connection(db: str, verbose: bool = False) -> bool:
+    """Test if the connection to the database is valid. 
+    
+    Args:
+        db: Database name ('pubmlst' or 'pasteur')
+        verbose: If True, display JSON payload from test URI
+        
+    Returns:
+        True if connection is valid, False otherwise
+    """
+    try:
+        # Get client credentials
+        client_id, client_secret = get_client_credentials(db)
+        
+        # Get session tokens
+        session_token, session_secret = retrieve_session_token(db)
+        
+        if not session_token or not session_secret:
+            return False
+        
+        # Test URL - using the database info endpoint
+        test_url = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/schemes"
+        
+        info(f"\nTesting connection to {db}...")
+        info(f"Using test database:  {DB_MAPPING[db]}")
+        info("\nPlease ensure you are registered to this database.")
+        
+        # Create OAuth session
+        session = OAuth1Session(
+            consumer_key=client_id,
+            consumer_secret=client_secret,
+            access_token=session_token,
+            access_token_secret=session_secret,
+        )
+        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+        
+        # Make test request
+        if verbose:
+            info(f"\nRequesting:  {test_url}")
+        
+        response = session.get(test_url)
+        
+        if verbose:
+            info(f"\nResponse status code: {response.status_code}")
+            if response.status_code == 200:
+                try:
+                    json_payload = response.json()
+                    info("\nJSON payload received:")
+                    import json as json_module
+                    click.echo(json_module.dumps(json_payload, indent=2))
+                except Exception as e:
+                    error(f"Could not parse JSON response: {e}")
+        
+        if response.status_code == 200:
+            return True
+        elif response.status_code == 401:
+            # Try to refresh the session token
+            info("\nAttempting to refresh session token...")
+            new_tokens = refresh_session_token(db, client_id, client_secret, verbose)
+            if new_tokens:
+                info("Session token refreshed. Testing connection again...")
+                # Retry the test with new token
+                session_token, session_secret = new_tokens
+                session = OAuth1Session(
+                    consumer_key=client_id,
+                    consumer_secret=client_secret,
+                    access_token=session_token,
+                    access_token_secret=session_secret,
+                )
+                session.headers. update({"User-Agent": f"mlstdb/{__version__}"})
+                response = session.get(test_url)
+                
+                if response. status_code == 200:
+                    success("Connection successful after token refresh!")
+                    return True
+                else:
+                    error(f"\nAuthentication failed after token refresh - status code: {response.status_code}")
+                    return False
+            else:
+                error("\nAuthentication failed - session token may be invalid or expired")
+                return False
+        elif response.status_code == 403:
+            error("\nAccess denied - you may not have permission to access this database")
+            info(f"Please ensure you are registered to the '{DB_MAPPING[db]}' database")
+            return False
+        else:
+            error(f"\nConnection test failed with status code: {response. status_code}")
+            return False
+            
+    except ValueError as e:
+        error(f"\n{e}")
+        return False
+    except Exception as e:
+        error(f"\nConnection test failed: {e}")
+        if verbose:
+            import traceback
+            error(traceback.format_exc())
+        return False
+
+def refresh_session_token(db:  str, client_key: str, client_secret: str, verbose: bool = False) -> Optional[Tuple[str, str]]: 
+    """Refresh session token using existing access tokens. 
+    
+    Args:
+        db: Database name ('pubmlst' or 'pasteur')
+        client_key: OAuth client ID
+        client_secret: OAuth client secret
+        verbose: If True, display detailed information
+        
+    Returns: 
+        Tuple of (new_token, new_secret) if successful, None otherwise
+    """
+    try:
+        info("Invalid session token. Requesting new one...")
+        
+        # Get access tokens
+        config = configparser.ConfigParser(interpolation=None)
+        access_tokens_file = get_config_dir() / "access_tokens"
+        
+        if not access_tokens_file.exists():
+            error("Access tokens file not found. Please re-register.")
+            return None
+        
+        config.read(access_tokens_file)
+        if not config.has_section(db):
+            error(f"No access tokens found for {db}. Please re-register.")
+            return None
+            
+        access_token = config[db]["token"]
+        access_secret = config[db]["secret"]
+        
+        # Get new session token
+        url_session = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/oauth/get_session_token"
+        session_request = OAuth1Session(
+            client_key,
+            client_secret,
+            access_token=access_token,
+            access_token_secret=access_secret,
+        )
+        session_request.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+        
+        if verbose:
+            info(f"Requesting new session token from:  {url_session}")
+        
+        r = session_request.get(url_session)
+        
+        if r.status_code == 200:
+            new_token = r.json()["oauth_token"]
+            new_secret = r.json()["oauth_token_secret"]
+            
+            # Save new session token
+            config = configparser.ConfigParser(interpolation=None)
+            session_tokens_file = get_config_dir() / "session_tokens"
+            if session_tokens_file.exists():
+                config.read(session_tokens_file)
+            config[db] = {"token": new_token, "secret": new_secret}
+            with open(session_tokens_file, "w") as configfile:
+                config. write(configfile)
+            
+            if verbose:
+                success("New session token obtained and saved")
+            else:
+                success("Session token refreshed successfully")
+            
+            return new_token, new_secret
+        else:
+            error(f"Failed to refresh session token: {r.status_code}")
+            if verbose and r.text:
+                error(f"Response: {r.text}")
+            return None
+            
+    except Exception as e:
+        error(f"Failed to refresh session token: {e}")
+        if verbose:
+            import traceback
+            error(traceback.format_exc())
+        return None

@@ -1,0 +1,51 @@
+site_name: mlstdb
+site_description: A Python package to update and manage the MLST database for the mlst tool
+site_url: https://MDU-PHL.github.io/mlstdb
+repo_url: https://github.com/MDU-PHL/mlstdb
+repo_name: MDU-PHL/mlstdb
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting Started: getting-started.md
+  - Usage:
+      - Overview: usage/overview.md
+      - Connect: usage/connect.md
+      - Update: usage/update.md
+      - Fetch (Advanced): usage/fetch.md
+  - Disclaimer: disclaimer.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
