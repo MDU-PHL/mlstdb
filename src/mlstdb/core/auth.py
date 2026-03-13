@@ -1,5 +1,6 @@
 import configparser
 import click
+import os
 import sys
 from pathlib import Path
 from typing import Tuple, Optional
@@ -30,7 +31,8 @@ def setup_client_credentials(site: str) -> Tuple[str, str]:
 
     config[site] = {"client_id": client_id, "client_secret": client_secret}
     
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     success(f"\nClient credentials saved to {file_path}")
     return client_id, client_secret
@@ -96,7 +98,8 @@ def register_tokens(db: str):
     if file_path.exists():
         config.read(file_path)
     config[db] = {"token": access_token, "secret": access_secret}
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     success(f"\nAccess token saved to {file_path}")
 
@@ -126,7 +129,8 @@ def register_tokens(db: str):
     if file_path.exists():
         config.read(file_path)
     config[db] = {"token": token, "secret": secret}
-    with open(file_path, "w") as configfile:
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
         config.write(configfile)
     
     success(f"\nSession token saved to {file_path}")
