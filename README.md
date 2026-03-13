@@ -5,7 +5,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mlstdb.svg)](https://pypi.org/project/mlstdb)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/version.svg)](https://anaconda.org/bioconda/mlstdb)
-[![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/license.svg)](https://anaconda.org/bioconda/mlstdb)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/downloads.svg)](https://anaconda.org/bioconda/mlstdb)
 
 Keep your [`mlst`](https://github.com/tseemann/mlst) databases up to date. `mlstdb` handles OAuth authentication with [PubMLST](https://pubmlst.org/) and [BIGSdb Pasteur](https://bigsdb.pasteur.fr/) so you can download the latest MLST schemes and build a BLAST database, in two commands.
@@ -78,4 +78,6 @@ Built upon the work of:
 
 ## License
 
-GPL v3. See [LICENSE.txt](LICENSE.txt) for details.
+`mlstdb` was previously licensed under MIT. As of version 0.1.7, it is licensed under GPL v3. Original MIT‑licensed code is preserved and attributed according to MIT terms.
+
+For additional support, please raise an issue.
