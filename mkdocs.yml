@@ -32,13 +32,14 @@ plugins:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Getting Started: getting-started.md
   - Usage:
       - Overview: usage/overview.md
-      - Fetch Schemes: usage/fetch.md
-      - Update Database: usage/update.md
+      - Connect: usage/connect.md
+      - Update: usage/update.md
+      - Fetch (Advanced): usage/fetch.md
   - Disclaimer: disclaimer.md
   - Changelog: changelog.md
-  - API Reference: api.md
 
 markdown_extensions:
   - admonition
