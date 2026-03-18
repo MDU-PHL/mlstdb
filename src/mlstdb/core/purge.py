@@ -2,6 +2,8 @@ import os
 import shutil
 from pathlib import Path
 
+import yaml
+
 from mlstdb.utils import error, info, success
 
 
@@ -72,6 +74,61 @@ def remove_alleles_from_fasta(fasta_path: str, alleles_to_remove: set):
                 f.write(f">{header}\n")
                 for seq_line in seq_lines:
                     f.write(seq_line)
+
+
+def parse_purge_config(config_path: str):
+    """Parse and validate a YAML purge configuration file.
+
+    Returns (entries, global_opts) where:
+      - entries: list of dicts with keys 'scheme', 'st' (list), 'alleles' (list)
+      - global_opts: dict with optional 'force', 'verbose', 'directory', 'blast_directory'
+    """
+    with open(config_path, "r") as f:
+        data = yaml.safe_load(f)
+
+    if not isinstance(data, dict) or "purge" not in data:
+        raise ValueError("Config file must contain a top-level 'purge' key with a list of entries.")
+
+    raw_entries = data["purge"]
+    if not isinstance(raw_entries, list) or len(raw_entries) == 0:
+        raise ValueError("'purge' must be a non-empty list of scheme entries.")
+
+    entries = []
+    for i, entry in enumerate(raw_entries):
+        if not isinstance(entry, dict) or "scheme" not in entry:
+            raise ValueError(f"Entry {i + 1} must be a dict with at least a 'scheme' key.")
+
+        parsed = {"scheme": str(entry["scheme"]), "st": [], "alleles": []}
+
+        if "st" in entry:
+            st_val = entry["st"]
+            if not isinstance(st_val, list):
+                st_val = [st_val]
+            parsed["st"] = [str(s) for s in st_val]
+
+        if "alleles" in entry:
+            alleles_val = entry["alleles"]
+            if not isinstance(alleles_val, list):
+                alleles_val = [alleles_val]
+            for a in alleles_val:
+                a_str = str(a)
+                if ":" not in a_str:
+                    raise ValueError(
+                        f"Entry {i + 1}: invalid allele format '{a_str}'. "
+                        "Expected locus:number (e.g. aroC:3)."
+                    )
+            parsed["alleles"] = [str(a) for a in alleles_val]
+
+        entries.append(parsed)
+
+    global_opts = {
+        "force": bool(data.get("force", False)),
+        "verbose": bool(data.get("verbose", False)),
+        "directory": data.get("directory"),
+        "blast_directory": data.get("blast_directory"),
+    }
+
+    return entries, global_opts
 
 
 def _format_st_list(st_numbers: list) -> str:
