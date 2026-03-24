@@ -63,11 +63,31 @@ mlst --blastdb blast/mlst.fa --datadir pubmlst your_assembly.fasta
 
 That's it. For advanced scheme exploration, custom filtering, and detailed option reference, see the [full documentation](https://MDU-PHL.github.io/mlstdb).
 
+## Removing contaminated STs or alleles
+
+Discovered a dodgy sequence type or allele in your local database? You can remove it without re-downloading the whole scheme:
+
+```sh
+# Remove a single ST (orphaned alleles are cleaned up automatically)
+mlstdb purge --scheme salmonella --st 3
+
+# Remove a specific allele (also removes any STs that reference it)
+mlstdb purge --scheme salmonella --allele aroC:1
+
+# Remove an entire scheme
+mlstdb purge --scheme salmonella
+
+# Batch purge across multiple schemes from a YAML config file
+mlstdb purge --config purge_config.yaml
+```
+
+The BLAST database is rebuilt automatically after each purge. See the [purge documentation](https://MDU-PHL.github.io/mlstdb/usage/purge/) for the full reference.
+
 ## Caution
 
 - **Back up** your existing MLST databases before running updates.
-- **Curate** your scheme list before updating — not all schemes are validated for the `mlst` tool.
-- The `mlst` tool is designed for **bacterial species only**.
+- If using `mlstdb fetch` to build a custom scheme list, **double-check** that all schemes are compatible with the `mlst` tool. Not all schemes are validated for use with `mlst`. The `mlst` tool is designed for **bacterial species only**.
+- `mlstdb purge` permanently modifies your local database. Take a backup of your `pubmlst/` directory before purging, especially when using `--force`.
 
 ## Acknowledgements
 

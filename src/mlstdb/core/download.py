@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import shutil
 import click
 import requests
 import subprocess
@@ -168,7 +169,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         scheme_info = {
             "name":  scheme_name,
             "description": mlst_scheme.get('description'),
-            "locus": locus_count,
+            "locii": locus_count,
             "download_date": download_date,
             "last_updated": last_updated if last_updated != 'Not found' else None,
             "source": db_type,
@@ -495,3 +496,35 @@ def create_blast_db(input_dir: str, blast_directory: str, verbose: bool = False)
         error(f"Failed to create BLAST database: {e.stderr}")
     except FileNotFoundError:
         error("makeblastdb command not found. Please ensure BLAST+ is installed.")
+
+
+def remove_incomplete_schemes(input_dir: str, verbose: bool = False) -> list:
+    """Remove scheme directories that are missing profiles or allele files.
+
+    A scheme is considered incomplete if it is missing its profiles file
+    ({scheme_name}.txt) or has no allele files (*.tfa). This can occur when
+    unauthenticated access or authentication failures leave partial directories
+    on disk.
+
+    Returns a list of scheme names that were removed.
+    """
+    input_path = Path(input_dir)
+    if not input_path.is_dir():
+        return []
+
+    removed = []
+    for scheme_dir in sorted(input_path.iterdir()):
+        if not scheme_dir.is_dir():
+            continue
+        scheme_name = scheme_dir.name
+        has_profiles = (scheme_dir / f"{scheme_name}.txt").exists()
+        has_alleles = any(scheme_dir.glob("*.tfa"))
+        if not has_profiles or not has_alleles:
+            if verbose:
+                info(f"Removing incomplete scheme directory: {scheme_name} "
+                     f"(missing: {'profiles' if not has_profiles else ''}"
+                     f"{'/' if not has_profiles and not has_alleles else ''}"
+                     f"{'alleles' if not has_alleles else ''})")
+            shutil.rmtree(scheme_dir)
+            removed.append(scheme_name)
+    return removed

@@ -5,7 +5,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from mlstdb.core.auth import get_client_credentials, retrieve_session_token
-from mlstdb.core.download import get_mlst_files, create_blast_db, create_session
+from mlstdb.core.download import get_mlst_files, create_blast_db, create_session, remove_incomplete_schemes
 from mlstdb.core.config import check_dir
 from mlstdb.utils import error, success, info
 from tqdm import tqdm
@@ -209,6 +209,26 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool, no_a
         if not [d for d in Path(directory).iterdir() if d.is_dir()]:
             error("\nNo schemes were successfully downloaded. BLAST database creation skipped.")
             sys.exit(1)
+
+        # Remove any incomplete scheme directories before building the BLAST database.
+        # These are left behind when unauthenticated access or auth failures prevent
+        # the profiles or allele files from being downloaded.
+        removed = remove_incomplete_schemes(directory, verbose)
+        if removed:
+            click.echo("")
+            click.secho(
+                f"Warning: Removed {len(removed)} incomplete scheme(s) with missing "
+                "profiles or allele files (possibly due to unauthenticated access or "
+                "authentication issues):",
+                fg="yellow"
+            )
+            for name in removed:
+                click.secho(f"  - {name}", fg="yellow")
+            click.secho(
+                "These schemes may require authentication. Please register and "
+                "re-run with authenticated access to download them.",
+                fg="yellow"
+            )
 
         info("\nCreating BLAST database from downloaded MLST schemes...")
         create_blast_db(directory, blast_directory, verbose)

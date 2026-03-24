@@ -59,13 +59,13 @@ mlstdb update
 
 This will:
 
-- Read the built-in curated list of ~300 MLST schemes from both PubMLST and Pasteur
+- Read the built-in curated list of ~170 MLST schemes from both PubMLST and Pasteur
 - Download allele sequences (`.tfa` files) and ST profiles (`.txt` files) for each scheme
 - Save everything to a `pubmlst/` directory
 - Build a BLAST database in `blast/`
 
 !!! note "First run may take a while"
-    Downloading 300+ schemes involves many API calls. You can speed things up with `--threads 4` or download specific schemes by providing a custom input file. See the [Update guide](usage/update.md) for details.
+    Downloading hundreds of schemes involves many API calls. You can speed things up with `--threads 4` or download specific schemes by providing a custom input file. See the [Update guide](usage/update.md) for details.
 
 If the download is interrupted, use `--resume` to pick up where you left off:
 

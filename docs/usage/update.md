@@ -10,7 +10,7 @@ The `update` command downloads MLST schemes and creates a BLAST database. This i
 mlstdb update
 ```
 
-By default, this uses the built-in curated list of ~300 MLST schemes from both PubMLST and Pasteur.
+By default, this uses the built-in curated list of ~170 MLST schemes from both PubMLST and Pasteur.
 
 ---
 

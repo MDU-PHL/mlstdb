@@ -20,6 +20,7 @@ The `mlst` tool comes with a bundled database, but MLST schemes are continuously
 - Downloads allele sequences and ST profiles for curated MLST schemes
 - Builds the BLAST database that `mlst` needs
 - Supports parallel downloads, resume on failure, and custom scheme lists
+- Lets you surgically remove contaminated STs or alleles
 
 ---
 
@@ -51,6 +52,7 @@ See the [Getting Started](getting-started.md) guide for a detailed walkthrough.
 |---------|---------|
 | `mlstdb connect` | Register OAuth credentials with PubMLST or Pasteur |
 | `mlstdb update` | Download schemes and build the BLAST database |
+| `mlstdb purge` | Remove contaminated STs, alleles, or entire schemes |
 | `mlstdb fetch` | *(Advanced)* Explore and filter all available schemes |
 
 Most users only need `connect` and `update`. See the [Usage Overview](usage/overview.md) for details.
@@ -62,3 +64,4 @@ Most users only need `connect` and `update`. See the [Usage Overview](usage/over
 - [Installation](installation.md) — All installation methods
 - [Getting Started](getting-started.md) — End-to-end tutorial
 - [Usage Overview](usage/overview.md) — How the commands work together
+- [Purge](usage/purge.md) — Remove contaminated entries from your local database
