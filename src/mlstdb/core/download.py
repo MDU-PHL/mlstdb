@@ -169,7 +169,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         scheme_info = {
             "name":  scheme_name,
             "description": mlst_scheme.get('description'),
-            "locus": locus_count,
+            "locii": locus_count,
             "download_date": download_date,
             "last_updated": last_updated if last_updated != 'Not found' else None,
             "source": db_type,
