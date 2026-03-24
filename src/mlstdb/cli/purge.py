@@ -176,7 +176,7 @@ def _run_config_purge(config_path, force, verbose, directory, blast_directory):
 def purge(scheme: str, st: str, allele: str, config_path: str, force: bool,
           verbose: bool, directory: str, blast_directory: str):
     """
-    Purge MLST scheme data.
+    Purge MLST scheme data and rebuild BLAST database.
 
     Remove an entire scheme, a specific ST, or a specific allele from the local
     database. The BLAST database is rebuilt afterwards.

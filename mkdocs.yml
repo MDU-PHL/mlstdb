@@ -37,6 +37,7 @@ nav:
       - Overview: usage/overview.md
       - Connect: usage/connect.md
       - Update: usage/update.md
+      - Purge: usage/purge.md
       - Fetch (Advanced): usage/fetch.md
   - Disclaimer: disclaimer.md
   - Changelog: changelog.md
