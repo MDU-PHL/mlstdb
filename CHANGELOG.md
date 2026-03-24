@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.1.0] - 2026-03-24
+
+### Added
+
+- New `mlstdb purge` command for removing schemes, STs, or individual alleles
+  from the local database, with automatic BLAST rebuild afterwards.
+  - Purge an entire scheme: `mlstdb purge -s salmonella`
+  - Purge a specific ST: `mlstdb purge -s salmonella --st 3`
+  - Purge a specific allele: `mlstdb purge -s salmonella -a aroC:1`
+  - Batch purge across multiple schemes from a YAML config file: `mlstdb purge -c purge_config.yaml`
+  - Before removing a ST, checks whether its alleles are used by other STs and
+    warns if so — use `--force` to override
+  - Before removing an allele, lists all STs that will be affected and prompts
+    for confirmation
+  - BLAST database is rebuilt once at the end, minimising redundant work
+  - Supports `--force` to skip all confirmation prompts, and `--verbose` for
+    detailed logging
+
+### Fixed
+
+- Incomplete scheme directories (missing profiles or allele files) are now removed
+  before BLAST database creation when using `--no-auth` or when authentication
+  failures leave partial downloads on disk. A warning lists the affected schemes
+  and advises re-running with authenticated access. ([#29](https://github.com/MDU-PHL/mlstdb/issues/29))
+- Corrected JSON key in `{scheme_name}_info.json` from `"locus"` to `"locii"`
+  for accurate scheme metadata. ([#28](https://github.com/MDU-PHL/mlstdb/issues/28))
+
 ## [1.0.0] - 2026-03-13
 
 ### Added
@@ -46,6 +73,7 @@
 - CHANGELOG.md file
 
 ### Improved
+
 - Removed redundant `fetch_resources()` function — now using `fetch_json()` directly
 
 [1.0.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.0.0
