@@ -1,7 +1,7 @@
 # Fetch (Advanced)
 
 !!! warning "Advanced command"
-    Most users don't need `fetch`. The `update` command already includes a curated list of ~300 validated MLST schemes. Use `fetch` only if you need to explore all available schemes or build a custom scheme list.
+    Most users don't need `fetch`. The `update` command already includes a curated list of ~170 validated MLST schemes. Use `fetch` only if you need to explore all available schemes or build a custom scheme list.
 
 The `fetch` command discovers and lists all available MLST schemes from PubMLST or Pasteur, with flexible filtering options. Its output can be used as input to `mlstdb update --input`.
 
