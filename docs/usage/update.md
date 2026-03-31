@@ -98,7 +98,6 @@ For each scheme, `mlstdb update` creates a directory containing:
 | `<scheme>.txt` | ST profile definitions (tab-delimited) |
 | `<locus>.tfa` | Allele sequences for each locus (FASTA) |
 | `<scheme>_info.json` | Metadata: source, download date, locus count |
-| `database_version.txt` | Database version number |
 
 ### Profile file format
 
