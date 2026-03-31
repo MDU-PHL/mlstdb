@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 from typing import Dict
 
 # Constants
@@ -30,5 +29,11 @@ def check_dir(directory: str) -> None:
     path = Path(directory)
     if not path.exists():
         path.mkdir(parents=True)
-    if not (path.is_dir() and os.access(directory, os.W_OK)):
+    if not path.is_dir():
+        raise PermissionError(f"Cannot write to directory: {directory}")
+    try:
+        test_file = path / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+    except OSError:
         raise PermissionError(f"Cannot write to directory: {directory}")

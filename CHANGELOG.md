@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.1] - 2026-03-31
+
+### Fixed
+
+- `check_dir` now uses an actual write test instead of `os.access`, fixing
+  false "Cannot write to directory" errors on NFS-mounted filesystems common
+  in HPC environments. Thanks to @talasjudit for the detailed report and
+  suggested fix. ([#32](https://github.com/MDU-PHL/mlstdb/issues/32))
+- `last-updated` field in scheme info JSON is now capped at `2024-12-31` when
+  running with `--no-auth`, accurately reflecting the data cutoff date for
+  unauthenticated access. ([#31](https://github.com/MDU-PHL/mlstdb/issues/31))
+- Removed the legacy `database_version.txt` file from the scheme directory.
+  Scheme metadata is now stored exclusively in `{scheme}_info.json`.
+  ([#11](https://github.com/MDU-PHL/mlstdb/issues/11))
+
 ## [1.1.0] - 2026-03-24
 
 ### Added

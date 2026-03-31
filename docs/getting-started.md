@@ -96,7 +96,6 @@ pubmlst/
 ├── klebsiella/
 │   ├── klebsiella.txt          # ST profiles
 │   ├── klebsiella_info.json    # Scheme metadata
-│   ├── database_version.txt    # Database version number
 │   ├── gapA.tfa                # Allele sequences
 │   ├── infB.tfa
 │   └── ...

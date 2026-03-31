@@ -155,6 +155,19 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
             last_added = 'No version information available'
         
         last_updated = mlst_scheme.get('last_updated', last_added)
+
+        # Unauthenticated access only covers data up to 2024-12-31.
+        # Cap any reported last_updated to that date so the stored metadata
+        # is not misleading.
+        _NO_AUTH_CUTOFF = '2024-12-31'
+        if no_auth and last_updated:
+            try:
+                if (datetime.strptime(last_updated, '%Y-%m-%d')
+                        > datetime.strptime(_NO_AUTH_CUTOFF, '%Y-%m-%d')):
+                    last_updated = _NO_AUTH_CUTOFF
+            except ValueError:
+                pass  # non-standard date format — leave unchanged
+
         locus_count = mlst_scheme.get('locus_count', len(mlst_scheme.get('loci', [])))
         download_date = datetime.now().strftime('%Y-%m-%d')
 
@@ -186,11 +199,10 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         if verbose:
             info(f"Scheme info saved to {scheme_info_path}")
 
-        # Keep database_version.txt for backwards compatibility
-        # This can be removed in a future version
+        # Remove legacy database_version.txt if present (superseded by scheme_info.json)
         db_version_path = os.path.join(directory, 'database_version.txt')
-        with open(db_version_path, 'w') as version_file:
-            version_file.write(f"{last_updated}\n")
+        if os.path.exists(db_version_path):
+            os.remove(db_version_path)
 
         # Download loci
         loci_iter = tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus") if show_progress else mlst_scheme['loci']
