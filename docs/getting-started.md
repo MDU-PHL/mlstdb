@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks you through the complete setup — from installation to running `mlst` with your freshly updated database.
+This guide walks you through the complete setup, from installation to running `mlst` with your freshly updated database.
 
 ---
 
@@ -22,7 +22,7 @@ mlstdb --version
 
 ## Step 2: Register with the databases
 
-Before downloading any schemes, you need to register your OAuth credentials with PubMLST and/or Pasteur. This is a **one-time setup** — your credentials are saved locally and reused for future updates.
+Before downloading any schemes, you need to register your OAuth credentials with PubMLST and/or Pasteur. This is a **one-time setup**. Your credentials are saved locally and reused for future updates.
 
 ### Connect to PubMLST
 
@@ -39,7 +39,7 @@ mlstdb connect --db pasteur
 Each `connect` command will:
 
 1. Ask for your **Client ID** (24 characters) and **Client Secret** (42 characters)
-2. Open an authorisation URL — visit it in your browser
+2. Open an authorisation URL, visit it in your browser
 3. Ask you to paste the **verification code** from the website
 4. Save all tokens securely to `~/.config/mlstdb/`
 
@@ -112,9 +112,9 @@ blast/
 
 Each scheme gets its own subdirectory containing:
 
-- **Profile file** (`<scheme>.txt`) — maps ST numbers to allele combinations
-- **Allele files** (`<locus>.tfa`) — FASTA sequences for each locus
-- **Metadata** (`<scheme>_info.json`) — source database, download date, locus count
+- **Profile file** (`<scheme>.txt`) : maps ST numbers to allele combinations
+- **Allele files** (`<locus>.tfa`) : FASTA sequences for each locus
+- **Metadata** (`<scheme>_info.json`) : source database, download date, locus count
 
 ---
 

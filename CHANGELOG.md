@@ -91,9 +91,12 @@
 
 - Removed redundant `fetch_resources()` function — now using `fetch_json()` directly
 
+
 [1.0.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.0.0
 [0.2.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v0.2.0
 [0.1.7]: https://github.com/MDU-PHL/mlstdb/releases/tag/v0.1.7
+[1.1.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.1.0
+[1.1.1]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.1.1
 [#11]: https://github.com/MDU-PHL/mlstdb/issues/11
 [#16]: https://github.com/MDU-PHL/mlstdb/issues/16
 [#20]: https://github.com/MDU-PHL/mlstdb/issues/20
