@@ -73,12 +73,6 @@ mlstdb purge --scheme salmonella --st 3
 
 # Remove a specific allele (also removes any STs that reference it)
 mlstdb purge --scheme salmonella --allele aroC:1
-
-# Remove an entire scheme
-mlstdb purge --scheme salmonella
-
-# Batch purge across multiple schemes from a YAML config file
-mlstdb purge --config purge_config.yaml
 ```
 
 The BLAST database is rebuilt automatically after each purge. See the [purge documentation](https://MDU-PHL.github.io/mlstdb/usage/purge/) for the full reference.
