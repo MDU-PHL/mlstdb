@@ -14,7 +14,7 @@ authors = [
   { name = "Himal Shrestha", email = "stha.himal2007@gmail.com" },
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -33,6 +33,7 @@ dependencies = [
     "configparser>=5.0.0",
     "biopython>=1.79",
     "numpy>=1.20.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -47,7 +48,7 @@ test = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/himal2007/mlstdb#readme"
+Documentation = "https://MDU-PHL.github.io/mlstdb"
 Issues = "https://github.com/himal2007/mlstdb/issues"
 Source = "https://github.com/himal2007/mlstdb"
 
