@@ -220,8 +220,8 @@ def parse_profile(profile_path: Path) -> Tuple[List[str], Dict[str, Dict[str, st
     loci = []
     
     with open(profile_path, 'r') as f:
-        # Read header
-        header = f.readline().strip().split('\t')
+        # Read header — use rstrip to preserve any trailing empty columns
+        header = f.readline().rstrip('\r\n').split('\t')
         if len(header) < 2:
             # Invalid header, return empty
             return [], {}
@@ -229,12 +229,14 @@ def parse_profile(profile_path: Path) -> Tuple[List[str], Dict[str, Dict[str, st
         
         # Read profiles
         for line in f:
-            line = line.strip()
-            if not line:
+            # Strip only newline characters so trailing tab-delimited empty
+            # fields (e.g. clonal_complex) are preserved after splitting.
+            line = line.rstrip('\r\n')
+            if not line.strip():
                 continue
             parts = line.split('\t')
-            if len(parts) < len(header):
-                # Skip malformed lines
+            # Require at least an ST plus one allele value
+            if len(parts) < 2:
                 continue
             st = parts[0]
             alleles = {loci[i]: parts[i+1] for i in range(len(loci)) if i+1 < len(parts)}
