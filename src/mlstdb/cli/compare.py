@@ -185,8 +185,13 @@ def compare(old_db, new_db, outdir, comparison_type, parallel, max_workers, sche
         total_profiles_removed = sum(c.profiles_removed for c in comparisons)
         total_profiles_modified = sum(c.profiles_modified for c in comparisons)
         
+        total_version_changes = sum(1 for c in comparisons if c.version_changed)
+
         click.echo(f"Schemes compared: {total_schemes}")
         click.echo(f"Schemes with changes: {schemes_with_changes}")
+        click.echo()
+        click.echo("Version Changes:")
+        click.echo(f"  Schemes with version change: {total_version_changes}")
         click.echo()
         click.echo("Profile Changes:")
         click.echo(f"  Added STs: {total_profiles_added}")

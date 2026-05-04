@@ -245,13 +245,15 @@ def parse_profile(profile_path: Path) -> Tuple[List[str], Dict[str, Dict[str, st
     return loci, profiles
 
 
-def read_database_version(version_path: Path) -> Optional[str]:
-    """Read database version from database_version.txt"""
-    if not version_path.exists():
+def read_database_version(scheme_path: Path, scheme_name: str) -> Optional[str]:
+    """Read database version from <scheme>_info.json (last_updated field)"""
+    info_path = scheme_path / f"{scheme_name}_info.json"
+    if not info_path.exists():
         return None
     
-    with open(version_path, 'r') as f:
-        return f.read().strip()
+    with open(info_path, 'r') as f:
+        data = json.load(f)
+    return data.get('last_updated')
 
 
 def hash_alleles_for_scheme(scheme_path: Path, scheme_name: str, 
@@ -399,8 +401,8 @@ def compare_scheme(old_db_path: Path, new_db_path: Path,
         raise ValueError(f"Scheme '{scheme_name}' not found in either database")
     
     # Read versions
-    old_version = read_database_version(old_scheme / 'database_version.txt') if old_scheme.exists() else None
-    new_version = read_database_version(new_scheme / 'database_version.txt') if new_scheme.exists() else None
+    old_version = read_database_version(old_scheme, scheme_name) if old_scheme.exists() else None
+    new_version = read_database_version(new_scheme, scheme_name) if new_scheme.exists() else None
     version_changed = old_version != new_version
     
     # Find profile files
@@ -563,10 +565,14 @@ def export_comparison_text(comparisons: List[SchemeComparison],
         total_alleles_removed = sum(c.alleles_removed for c in comparisons)
         total_alleles_modified = sum(c.alleles_modified for c in comparisons)
         
+        total_version_changes = sum(1 for c in comparisons if c.version_changed)
+
         f.write("SUMMARY\n")
         f.write("-" * 80 + "\n")
         f.write(f"Total schemes compared: {total_schemes}\n")
         f.write(f"Schemes with changes: {schemes_with_changes}\n")
+        f.write(f"\nVersion Changes:\n")
+        f.write(f"  Schemes with version change: {total_version_changes}\n")
         f.write(f"\nProfile Changes:\n")
         f.write(f"  Added: {total_profiles_added}\n")
         f.write(f"  Removed: {total_profiles_removed}\n")
