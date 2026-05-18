@@ -2,6 +2,7 @@ import configparser
 import click
 import os
 import sys
+import requests
 from pathlib import Path
 from typing import Tuple, Optional
 from rauth import OAuth1Service, OAuth1Session
@@ -36,6 +37,39 @@ def setup_client_credentials(site: str) -> Tuple[str, str]:
         config.write(configfile)
     success(f"\nClient credentials saved to {file_path}")
     return client_id, client_secret
+
+
+def setup_api_key(site: str) -> str:
+    """Prompt for and save a personal API key (BIGSdb ≥ v1.53.0)."""
+    config = configparser.ConfigParser(interpolation=None)
+    file_path = get_config_dir() / "api_keys"
+    if file_path.exists():
+        config.read(file_path)
+
+    info("\nPlease enter your personal API key (from your BIGSdb profile page):")
+    api_key = click.prompt("API Key", type=str).strip()
+    while not api_key:
+        error("API key cannot be empty")
+        api_key = click.prompt("API Key", type=str).strip()
+
+    config[site] = {"api_key": api_key}
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
+        config.write(configfile)
+    success(f"\nAPI key saved to {file_path}")
+    return api_key
+
+
+def retrieve_api_key(site: str) -> Optional[str]:
+    """Return the stored personal API key for *site*, or None if not found."""
+    config = configparser.ConfigParser(interpolation=None)
+    file_path = get_config_dir() / "api_keys"
+    if file_path.is_file():
+        config.read(file_path)
+        if config.has_section(site):
+            return config[site].get("api_key")
+    return None
+
 
 def register_tokens(db: str):
     """Setup authentication tokens by registering with the service."""
@@ -162,7 +196,7 @@ def get_client_credentials(key_name: str) -> Tuple[str, str]:
 
 def remove_db_credentials(config_dir: Path, db: str) -> None:
     """Remove credentials for specific database while preserving others."""
-    for file_name in ["client_credentials", "session_tokens", "access_tokens"]:
+    for file_name in ["client_credentials", "session_tokens", "access_tokens", "api_keys"]:
         file_path = config_dir / file_name
         if file_path.exists():
             config = configparser.ConfigParser(interpolation=None)
@@ -186,33 +220,65 @@ def retrieve_session_token(key_name: str) -> Tuple[str, str]:
     
     return None, None
 
-def test_connection(db: str, verbose: bool = False) -> bool:
-    """Test if the connection to the database is valid. 
-    
+def test_connection(db: str, verbose: bool = False, api_key: Optional[str] = None) -> bool:
+    """Test if the connection to the database is valid.
+
     Args:
         db: Database name ('pubmlst' or 'pasteur')
         verbose: If True, display JSON payload from test URI
-        
+        api_key: Optional personal API key (BIGSdb ≥ v1.53.0)
+
     Returns:
         True if connection is valid, False otherwise
     """
     try:
-        # Get client credentials
-        client_id, client_secret = get_client_credentials(db)
-        
-        # Get session tokens
-        session_token, session_secret = retrieve_session_token(db)
-        
-        if not session_token or not session_secret:
-            return False
-        
         # Test URL - using the database info endpoint
         test_url = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/schemes"
-        
+
         info(f"\nTesting connection to {db}...")
         info(f"Using test database:  {DB_MAPPING[db]}")
+
+        if api_key:
+            # API key auth path (BIGSdb ≥ v1.53.0)
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": f"mlstdb/{__version__}",
+                "X-API-Key": api_key,
+            })
+            if verbose:
+                info(f"\nRequesting:  {test_url}")
+            response = session.get(test_url)
+            if verbose:
+                info(f"\nResponse status code: {response.status_code}")
+                if response.status_code == 200:
+                    try:
+                        import json as json_module
+                        info("\nJSON payload received:")
+                        click.echo(json_module.dumps(response.json(), indent=2))
+                    except Exception as e:
+                        error(f"Could not parse JSON response: {e}")
+            if response.status_code == 200:
+                return True
+            elif response.status_code == 401:
+                error("\nAPI key rejected (401). The key may be revoked or invalid.")
+                info("Run 'mlstdb connect --api-key' to save a new API key.")
+                return False
+            else:
+                error(f"\nConnection test failed with status code: {response.status_code}")
+                return False
+
+        # OAuth path
         info("\nPlease ensure you are registered to this database.")
-        
+
+        # Get client credentials
+        client_id, client_secret = get_client_credentials(db)
+
+        # Get session tokens
+        session_token, session_secret = retrieve_session_token(db)
+
+        if not session_token or not session_secret:
+            return False
+
         # Create OAuth session
         session = OAuth1Session(
             consumer_key=client_id,
@@ -221,11 +287,11 @@ def test_connection(db: str, verbose: bool = False) -> bool:
             access_token_secret=session_secret,
         )
         session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-        
+
         # Make test request
         if verbose:
             info(f"\nRequesting:  {test_url}")
-        
+
         response = session.get(test_url)
         
         if verbose:
