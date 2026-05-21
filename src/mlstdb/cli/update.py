@@ -4,7 +4,7 @@ import importlib.resources
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from mlstdb.core.auth import get_client_credentials, retrieve_session_token
+from mlstdb.core.auth import get_client_credentials, retrieve_session_token, retrieve_api_key
 from mlstdb.core.download import get_mlst_files, create_blast_db, create_session, remove_incomplete_schemes
 from mlstdb.core.config import check_dir
 from mlstdb.utils import error, success, info
@@ -93,12 +93,19 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool, no_a
         # Build reusable sessions per database type
         sessions = {}  # db_type -> session
         credentials = {}  # db_type -> (client_key, client_secret, session_token, session_secret)
+        api_keys = {}  # db_type -> api_key string (when API key auth is used)
 
         if no_auth:
             sessions['no_auth'] = create_session(no_auth=True)
         else:
             db_types_needed = set(entry[0].lower() for entry in scheme_entries)
             for db_type in db_types_needed:
+                api_key = retrieve_api_key(db_type)
+                if api_key:
+                    api_keys[db_type] = api_key
+                    credentials[db_type] = (None, None, None, None)
+                    sessions[db_type] = create_session(api_key=api_key)
+                    continue
                 try:
                     client_key, client_secret = get_client_credentials(db_type)
                     session_token, session_secret = retrieve_session_token(db_type)
@@ -127,6 +134,7 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool, no_a
             session = sessions[db_key]
             creds = credentials.get(database.lower(), (None, None, None, None))
             client_key, client_secret, session_token, session_secret = creds
+            entry_api_key = api_keys.get(database.lower())
 
             scheme_dir = Path(directory) / scheme
             check_dir(str(scheme_dir))
@@ -135,7 +143,7 @@ def update(input: str, directory: str, blast_directory: str, verbose: bool, no_a
                 get_mlst_files(url, str(scheme_dir), client_key, client_secret,
                                session_token, session_secret, scheme, verbose=verbose,
                                no_auth=no_auth, session=session,
-                               show_progress=not parallel)
+                               show_progress=not parallel, api_key=entry_api_key)
                 return ('ok', scheme, database)
             except Exception as e:
                 return ('error', scheme, database, e)
