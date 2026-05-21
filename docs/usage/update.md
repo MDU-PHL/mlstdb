@@ -21,11 +21,16 @@ By default, this uses the built-in curated list of ~170 MLST schemes from both P
 | `--input`, `-i` | Path to custom scheme list file | Built-in `mlst_schemes_all.tab` |
 | `--directory`, `-d` | Output directory for scheme data | `pubmlst` |
 | `--blast-directory`, `-b` | Output directory for BLAST database | `blast` |
-| `--no-auth` | Skip OAuth; use unauthenticated access | Off |
+| `--no-auth` | Skip authentication; use unauthenticated access | Off |
 | `--resume`, `-r` | Skip already-downloaded schemes | Off |
 | `--threads`, `-t` | Parallel download threads (max recommended: 4) | `1` |
 | `--verbose`, `-v` | Show detailed debug output | Off |
 | `-h`, `--help` | Show help message | |
+
+!!! tip "Authentication"
+    `mlstdb update` automatically uses a **personal API key** if one is stored
+    (set up via `mlstdb connect --api-key`), falling back to OAuth tokens if not.
+    Use `--no-auth` only when neither is available and you only need public data.
 
 ---
 

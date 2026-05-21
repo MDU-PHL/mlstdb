@@ -1,12 +1,23 @@
 # Connect
 
-The `connect` command registers your OAuth credentials with PubMLST or Pasteur databases. This is a **one-time setup** per database, credentials are saved locally and reused automatically.
+The `connect` command registers your credentials with PubMLST or Pasteur databases. This is a **one-time setup** per database. Credentials are saved locally and reused automatically.
+
+Two authentication methods are supported:
+
+| Method | When to use |
+|--------|-------------|
+| **Personal API Key** *(recommended)* | BIGSdb ≥ v1.53.0 (PubMLST since May 2026). Simpler setup, no OAuth flow, no browser required. Note, only available for PubMLST. |
+| **OAuth** *(legacy)* | All BIGSdb versions. Required for Pasteur or any older instance. |
 
 ---
 
 ## Basic Usage
 
 ```sh
+# Personal API Key (recommended for PubMLST)
+mlstdb connect --db pubmlst --api-key
+
+# OAuth (legacy, or for Pasteur)
 mlstdb connect --db pubmlst
 mlstdb connect --db pasteur
 ```
@@ -20,12 +31,54 @@ If you omit `--db`, you'll be prompted to choose.
 | Option | Description |
 |--------|-------------|
 | `--db`, `-d` | Database to connect to: `pubmlst` or `pasteur` |
+| `--api-key` | Register using a personal API key instead of OAuth (BIGSdb ≥ v1.53.0) |
 | `--verbose`, `-v` | Show detailed debug output |
 | `-h`, `--help` | Show help message |
 
 ---
 
-## Obtaining Client Credentials
+## Personal API Key
+
+BIGSdb v1.53.0 introduced personal API keys as a simpler alternative to OAuth. A single key is generated from your BIGSdb user profile and passed via the `X-API-Key` request header. There is no browser step, no verification code, and no OAuth token expiry.
+
+### Obtaining a Personal API Key
+
+#### PubMLST
+
+1. Go to [https://pubmlst.org/bigsdb](https://pubmlst.org/bigsdb) and log in
+2. Open your **My Account** (top-right menu)
+3. Scroll to the **API keys** section and generate a new key for MLST database access (if not already generated).
+4. Copy the key.
+
+#### Pasteur
+
+Personal API keys require BIGSdb ≥ v1.53.0. Check with the Pasteur team whether their instance has been upgraded before using `--api-key` for Pasteur.
+
+### Registering your API Key
+
+```sh
+mlstdb connect --db pubmlst --api-key
+```
+
+You will be prompted:
+
+```
+Please enter your personal API key (from your BIGSdb profile page):
+API Key: **********************
+```
+
+The key is saved to `~/.config/mlstdb/api_keys` with `0600` permissions and used automatically by all subsequent `mlstdb update` and `mlstdb fetch` calls.
+
+!!! tip
+    You can regenerate your key at any time from your BIGSdb profile. Run `mlstdb connect --db pubmlst --api-key` again to update the stored key.
+
+---
+
+## OAuth (Legacy)
+
+Use OAuth if you are on an older BIGSdb instance or need access to private data or submission endpoints (API keys only cover public data reads).
+
+### Obtaining Client Credentials
 
 Before running `mlstdb connect`, you need to register as an API client on each database platform to get your **Client ID** and **Client Secret**.
 
@@ -53,9 +106,15 @@ Before running `mlstdb connect`, you need to register as an API client on each d
 
 ---
 
-## What happens during connect
+## What Happens During `connect`
 
-When you run `mlstdb connect`, the following OAuth flow occurs:
+### Personal API Key flow
+
+1. **You provide** your personal API key (from your BIGSdb profile)
+2. **mlstdb** tests the key against the database API
+3. **Key is saved** to `~/.config/mlstdb/api_keys`
+
+### OAuth flow
 
 1. **You provide** your Client ID and Client Secret
 2. **mlstdb** requests a temporary token from the API
@@ -67,9 +126,10 @@ When you run `mlstdb connect`, the following OAuth flow occurs:
 
 ```
 ~/.config/mlstdb/
-├── client_credentials    # Your Client ID and Secret
+├── api_keys              # Personal API key (BIGSdb ≥ v1.53.0)
+├── client_credentials    # OAuth Client ID and Secret
 ├── access_tokens         # OAuth access tokens
-└── session_tokens        # Session tokens (used for API calls)
+└── session_tokens        # OAuth session tokens (used for API calls)
 ```
 
 !!! note "Security"
@@ -78,7 +138,19 @@ When you run `mlstdb connect`, the following OAuth flow occurs:
 
 ## Re-connecting
 
-If your credentials expire or become invalid, `mlstdb connect` will detect this:
+### Personal API Key
+
+If your key is revoked or regenerated on the BIGSdb side, re-run:
+
+```sh
+mlstdb connect --db pubmlst --api-key
+```
+
+You will be prompted whether to replace the existing key.
+
+### OAuth
+
+If your OAuth credentials expire or become invalid, `mlstdb connect` will detect this:
 
 ```sh
 mlstdb connect --db pubmlst

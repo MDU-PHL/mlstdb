@@ -22,29 +22,45 @@ mlstdb --version
 
 ## Step 2: Register with the databases
 
-Before downloading any schemes, you need to register your OAuth credentials with PubMLST and/or Pasteur. This is a **one-time setup**. Your credentials are saved locally and reused for future updates.
+Before downloading any schemes, you need to register your credentials with PubMLST and/or Pasteur. This is a **one-time setup**. Your credentials are saved locally and reused for future updates.
 
-### Connect to PubMLST
+Two methods are available — choose the one that suits your setup:
+
+---
+
+### Option A: Personal API Key *(recommended for PubMLST)*
+
+BIGSdb v1.53.0 (PubMLST since May 2026) supports personal API keys — a simpler alternative to OAuth with no browser step required.
+
+```sh
+mlstdb connect --db pubmlst --api-key
+```
+
+You will be prompted to paste your API key (generate one from your PubMLST profile page under **API keys**). The key is saved to `~/.config/mlstdb/api_keys`.
+
+!!! tip "Where do I get my API key?"
+    See the [Connect guide](usage/connect.md#obtaining-a-personal-api-key) for step-by-step instructions.
+
+---
+
+### Option B: OAuth *(required for Pasteur or older BIGSdb instances)*
 
 ```sh
 mlstdb connect --db pubmlst
-```
-
-### Connect to Pasteur
-
-```sh
 mlstdb connect --db pasteur
 ```
 
 Each `connect` command will:
 
 1. Ask for your **Client ID** (24 characters) and **Client Secret** (42 characters)
-2. Open an authorisation URL, visit it in your browser
+2. Open an authorisation URL — visit it in your browser
 3. Ask you to paste the **verification code** from the website
 4. Save all tokens securely to `~/.config/mlstdb/`
 
 !!! tip "Where do I get my Client ID and Client Secret?"
-    See the [Connect guide](usage/connect.md#obtaining-client-credentials) for step-by-step instructions on registering with PubMLST and Pasteur.
+    See the [Connect guide](usage/connect.md#oauth-legacy) for step-by-step instructions on registering with PubMLST and Pasteur.
+
+---
 
 !!! info
     If you've already connected before, `mlstdb connect` will test your existing credentials and skip re-registration if they're still valid.

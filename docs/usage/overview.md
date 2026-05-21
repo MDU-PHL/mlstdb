@@ -44,9 +44,13 @@
 
 ### `mlstdb connect` — Register credentials
 
-Sets up OAuth authentication with PubMLST or Pasteur. Run once per database.
+Sets up authentication with PubMLST or Pasteur. Run once per database.
 
 ```sh
+# Recommended: personal API key (BIGSdb ≥ v1.53.0, e.g. PubMLST)
+mlstdb connect --db pubmlst --api-key
+
+# Legacy OAuth (all BIGSdb versions, required for Pasteur)
 mlstdb connect --db pubmlst
 mlstdb connect --db pasteur
 ```
