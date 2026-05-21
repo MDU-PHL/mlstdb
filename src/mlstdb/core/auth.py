@@ -71,6 +71,18 @@ def retrieve_api_key(site: str) -> Optional[str]:
     return None
 
 
+def _parse_error_message(response) -> str:
+    """Safely extract an error message from a failed API response."""
+    try:
+        data = response.json()
+        if isinstance(data, dict):
+            return data.get("message", f"HTTP {response.status_code}")
+        return f"HTTP {response.status_code}"
+    except Exception:
+        text = response.text[:200] if response.text else "(empty response)"
+        return f"HTTP {response.status_code} — {text}"
+
+
 def register_tokens(db: str):
     """Setup authentication tokens by registering with the service."""
     info(f"\nNo tokens found for {db}. Starting registration process...")
@@ -95,7 +107,16 @@ def register_tokens(db: str):
         headers={"User-Agent": f"mlstdb/{__version__}"}
     )
     if r.status_code != 200:
-        error(f"Failed to get request token: {r.json()['message']}")
+        msg = _parse_error_message(r)
+        if "timestamp" in msg.lower() or "600 seconds" in msg.lower():
+            error(
+                f"Failed to get request token: {msg}\n"
+                "  This is a clock synchronisation issue.\n"
+                "  On WSL/Linux, try:  sudo hwclock -s\n"
+                "  On WSL2, try:       sudo ntpdate time.windows.com"
+            )
+        else:
+            error(f"Failed to get request token: {msg}")
         sys.exit(1)
     
     request_token = r.json()["oauth_token"]
@@ -120,7 +141,7 @@ def register_tokens(db: str):
     )
     
     if r.status_code != 200:
-        error(f"Failed to get access token: {r.json()['message']}")
+        error(f"Failed to get access token: {_parse_error_message(r)}")
         sys.exit(1)
         
     access_token = r. json()["oauth_token"]
@@ -147,11 +168,12 @@ def register_tokens(db: str):
         access_token=access_token,
         access_token_secret=access_secret
     )
-    
-    r = session.get(url, headers={"User-Agent": f"mlstdb/{__version__}"})
-    
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+
+    r = session.get(url, params={})
+
     if r.status_code != 200:
-        error(f"Failed to get session token: {r.json()['message']}")
+        error(f"Failed to get session token: {_parse_error_message(r)}")
         sys.exit(1)
         
     token = r.json()["oauth_token"]
@@ -292,7 +314,7 @@ def test_connection(db: str, verbose: bool = False, api_key: Optional[str] = Non
         if verbose:
             info(f"\nRequesting:  {test_url}")
 
-        response = session.get(test_url)
+        response = session.get(test_url, params={})
         
         if verbose:
             info(f"\nResponse status code: {response.status_code}")
@@ -322,7 +344,7 @@ def test_connection(db: str, verbose: bool = False, api_key: Optional[str] = Non
                     access_token_secret=session_secret,
                 )
                 session.headers. update({"User-Agent": f"mlstdb/{__version__}"})
-                response = session.get(test_url)
+                response = session.get(test_url, params={})
                 
                 if response. status_code == 200:
                     success("Connection successful after token refresh!")
@@ -395,7 +417,7 @@ def refresh_session_token(db:  str, client_key: str, client_secret: str, verbose
         if verbose:
             info(f"Requesting new session token from:  {url_session}")
         
-        r = session_request.get(url_session)
+        r = session_request.get(url_session, params={})
         
         if r.status_code == 200:
             new_token = r.json()["oauth_token"]
