@@ -1,17 +1,19 @@
 import click
 import configparser
-from mlstdb.core.auth import register_tokens, test_connection
+from mlstdb.core.auth import register_tokens, test_connection, setup_api_key, retrieve_api_key
 from mlstdb.core.config import get_config_dir
 from mlstdb.utils import error, success, info
 
 
 @click.command()
 @click.help_option('-h', '--help')
-@click.option('--db', '-d', type=click.Choice(['pubmlst', 'pasteur']), 
+@click.option('--db', '-d', type=click.Choice(['pubmlst', 'pasteur']),
               help='Database to use (pubmlst or pasteur)')
-@click.option('--verbose', '-v', is_flag=True, 
+@click.option('--api-key', 'use_api_key', is_flag=True, default=False,
+              help='Register using a personal API key instead of OAuth (BIGSdb ≥ v1.53.0)')
+@click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose logging for debugging')
-def connect(db, verbose):
+def connect(db, use_api_key, verbose):
     """Initial Database Registration and Setup
     
     Establishes connection with PubMLST or Pasteur databases by registering
@@ -22,12 +24,43 @@ def connect(db, verbose):
     try:
         # If db is not provided, prompt for it
         if not db:
-            db = click. prompt(
+            db = click.prompt(
                 "Which database would you like to connect to?",
                 type=click.Choice(['pubmlst', 'pasteur']),
                 default='pubmlst'
             )
-        
+
+        if use_api_key:
+            # --- API key registration path (BIGSdb ≥ v1.53.0) ---
+            existing_key = retrieve_api_key(db)
+            if existing_key:
+                click.secho(f"\n✓ API key found for {db}", fg="green")
+                info("\nVerifying existing API key...")
+                if test_connection(db, verbose=verbose, api_key=existing_key):
+                    success(f"\n✓ API key for {db} is valid!")
+                    info("\nYou can now use 'mlstdb update' to update/download your database.")
+                    return
+                else:
+                    error(f"\n✗ API key test failed for {db}")
+                    if not click.confirm(f"\nDo you want to replace the API key for {db}?",
+                                        default=True):
+                        error("\nmlstdb not connected. Please re-register when ready.")
+                        raise SystemExit(1)
+
+            saved_key = setup_api_key(db)
+            info("\nVerifying new API key...")
+            if test_connection(db, verbose=verbose, api_key=saved_key):
+                success(f"\n✓ Successfully connected to {db} using API key!")
+                info("\nNext steps:")
+                info("  1. Use 'mlstdb update' to update/download MLST schemes")
+                info("  2. Or use 'mlstdb fetch' for advanced schema exploration")
+            else:
+                error(f"\n✗ Connection test failed after saving API key")
+                info("Please check your API key and try again.")
+                raise SystemExit(1)
+            return
+
+        # --- OAuth registration path ---
         config_dir = get_config_dir()
         client_creds_file = config_dir / "client_credentials"
         session_tokens_file = config_dir / "session_tokens"
