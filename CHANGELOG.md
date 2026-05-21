@@ -1,19 +1,29 @@
 # Changelog
 
+## [1.2.0] - 2026-05-22
+
+### Added
+
+- Personal API key support (BIGSdb ≥ v1.53.0): `mlstdb connect --api-key` registers a key generated from your BIGSdb profile page. The key is stored in `~/.config/mlstdb/api_keys` (`0600`) and used automatically by `update` and `fetch` in preference to OAuth tokens.
+- New `setup_api_key()` and `retrieve_api_key()` functions in `mlstdb.core.auth` for storing and retrieving personal API keys.
+- `create_session()` in `mlstdb.core.download` now accepts an `api_key` parameter; when set it creates a plain `requests.Session` with the `X-API-Key` header.
+- `remove_db_credentials()` now also removes stored API keys when purging a site's credentials.
+
+### Fixed
+
+- `TypeError: argument of type 'NoneType' is not iterable` in `mlstdb connect --db pubmlst` on Rocky Linux and WSL2 ([#35](https://github.com/MDU-PHL/mlstdb/issues/35)). Root cause: rauth 0.7.3 `_parse_optional_params` calls `req_kwargs.get('params')` without a default, raising `TypeError` when `params` is absent from request kwargs. Fixed by passing `params={}` to every bare `OAuth1Session.get()` call across `auth.py` and `download.py`.
+- Unsafe `r.json()['message']` error parsing in `register_tokens()` and throughout the download pipeline replaced by a new `_parse_error_message()` helper, which gracefully handles non-JSON responses (HTML error pages, empty bodies) returned by BIGSdb on
+  HTTPS redirects or proxy errors.
+- `mlstdb connect` now prints actionable clock-sync instructions when the OAuth request token step fails with a `timestamp more than 600 seconds` error.
+
+
 ## [1.1.1] - 2026-03-31
 
 ### Fixed
 
-- `check_dir` now uses an actual write test instead of `os.access`, fixing
-  false "Cannot write to directory" errors on NFS-mounted filesystems common
-  in HPC environments. Thanks to @talasjudit for the detailed report and
-  suggested fix. ([#32](https://github.com/MDU-PHL/mlstdb/issues/32))
-- `last-updated` field in scheme info JSON is now capped at `2024-12-31` when
-  running with `--no-auth`, accurately reflecting the data cutoff date for
-  unauthenticated access. ([#31](https://github.com/MDU-PHL/mlstdb/issues/31))
-- Removed the legacy `database_version.txt` file from the scheme directory.
-  Scheme metadata is now stored exclusively in `{scheme}_info.json`.
-  ([#11](https://github.com/MDU-PHL/mlstdb/issues/11))
+- `check_dir` now uses an actual write test instead of `os.access`, fixing false "Cannot write to directory" errors on NFS-mounted filesystems common in HPC environments. Thanks to @talasjudit for the detailed report and suggested fix. ([#32](https://github.com/MDU-PHL/mlstdb/issues/32))
+- `last-updated` field in scheme info JSON is now capped at `2024-12-31` when running with `--no-auth`, accurately reflecting the data cutoff date for unauthenticated access. ([#31](https://github.com/MDU-PHL/mlstdb/issues/31))
+- Removed the legacy `database_version.txt` file from the scheme directory. Scheme metadata is now stored exclusively in `{scheme}_info.json`. ([#11](https://github.com/MDU-PHL/mlstdb/issues/11))
 
 ## [1.1.0] - 2026-03-24
 
@@ -97,6 +107,7 @@
 [0.1.7]: https://github.com/MDU-PHL/mlstdb/releases/tag/v0.1.7
 [1.1.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.1.0
 [1.1.1]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.1.1
+[1.2.0]: https://github.com/MDU-PHL/mlstdb/releases/tag/v1.2.0
 [#11]: https://github.com/MDU-PHL/mlstdb/issues/11
 [#16]: https://github.com/MDU-PHL/mlstdb/issues/16
 [#20]: https://github.com/MDU-PHL/mlstdb/issues/20
