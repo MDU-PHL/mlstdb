@@ -6,7 +6,7 @@ from tqdm import tqdm
 import configparser
 import sys
 import os
-from mlstdb.core.auth import register_tokens, setup_client_credentials, remove_db_credentials
+from mlstdb.core.auth import register_tokens, setup_client_credentials, remove_db_credentials, retrieve_api_key
 from mlstdb.core.download import (fetch_resources, get_matching_schemes, create_session,
                                 sanitise_output, clear_file, 
                                 load_processed_databases,save_processed_database, load_scheme_uris)
@@ -87,41 +87,52 @@ def fetch(db, exclude, match, scheme_uris, filter, resume, no_auth, threads, ver
             info("Using unauthenticated access (no OAuth)")
             http_session = create_session(no_auth=True)
         else:
-            # Get client credentials
-            config_dir = get_config_dir()
-            client_creds_file = config_dir / "client_credentials"
-            session_tokens_file = config_dir / "session_tokens"
+            # Check for API key first (BIGSdb ≥ v1.53.0)
+            api_key = retrieve_api_key(db)
+            if api_key:
+                info("Using API key authentication")
+                http_session = create_session(api_key=api_key)
+                client_key = None
+                client_secret = None
+                session_token = None
+                session_secret = None
+            else:
+                # Fall back to OAuth
+                # Get client credentials
+                config_dir = get_config_dir()
+                client_creds_file = config_dir / "client_credentials"
+                session_tokens_file = config_dir / "session_tokens"
 
-            # Check if credentials exist, if not setup
-            if not client_creds_file.exists() or not session_tokens_file.exists():
-                register_tokens(db)
+                # Check if credentials exist, if not setup
+                if not client_creds_file.exists() or not session_tokens_file.exists():
+                    register_tokens(db)
 
-            # Get credentials
-            config = configparser.ConfigParser(interpolation=None)
-            
-            # Read client credentials
-            config.read(client_creds_file)
-            if not config.has_section(db):
-                error(f"No client credentials found for {db}")
-                register_tokens(db)
+                # Get credentials
+                config = configparser.ConfigParser(interpolation=None)
+
+                # Read client credentials
                 config.read(client_creds_file)
-            
-            client_key = config[db]["client_id"]
-            client_secret = config[db]["client_secret"]
+                if not config.has_section(db):
+                    error(f"No client credentials found for {db}")
+                    register_tokens(db)
+                    config.read(client_creds_file)
 
-            # Read session tokens
-            config.read(session_tokens_file)
-            if not config.has_section(db):
-                error(f"No session token found for {db}")
-                register_tokens(db)
+                client_key = config[db]["client_id"]
+                client_secret = config[db]["client_secret"]
+
+                # Read session tokens
                 config.read(session_tokens_file)
-            
-            session_token = config[db]["token"]
-            session_secret = config[db]["secret"]
+                if not config.has_section(db):
+                    error(f"No session token found for {db}")
+                    register_tokens(db)
+                    config.read(session_tokens_file)
 
-            # Create a single reusable OAuth session
-            http_session = create_session(client_key, client_secret, 
-                                          session_token, session_secret)
+                session_token = config[db]["token"]
+                session_secret = config[db]["secret"]
+
+                # Create a single reusable OAuth session
+                http_session = create_session(client_key, client_secret,
+                                              session_token, session_secret)
 
         output_file = f"mlst_schemes_{db}.tab"
         processed_file = f"processed_dbs_{db}.tab"
