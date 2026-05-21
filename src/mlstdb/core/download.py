@@ -61,7 +61,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret,
                                  api_key=api_key)
 
     try:
-        response = session.get(url)
+        response = session.get(url, params={})
         if verbose:
             print(f"Response code: {response.status_code}, URL: {url}")
 
@@ -89,7 +89,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret,
                     access_token_secret=new_session_secret,
                 )
                 retry_session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-                response = retry_session.get(url)
+                response = retry_session.get(url, params={})
                 if verbose:
                     print(f"Response code after token refresh: {response.status_code}, URL: {url}")
             # Raise for any remaining errors (e.g. 401 if not registered for this scheme)
@@ -119,7 +119,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)
+        response = session.get(url, params={})
         
         # Handle expired token (401)
         if response.status_code == 401:
@@ -144,7 +144,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
                     access_token_secret=session_secret,
                 )
                 session.headers.update({"User-Agent":  f"mlstdb/{__version__}"})
-                response = session.get(url)
+                response = session.get(url, params={})
             else:
                 error("Failed to refresh session token")
                 sys. exit(1)
@@ -214,7 +214,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
         loci_iter = tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus") if show_progress else mlst_scheme['loci']
         for loci in loci_iter:
             name = loci. split('/')[-1]
-            loci_fasta = session.get(loci + '/alleles_fasta')
+            loci_fasta = session.get(loci + '/alleles_fasta', params={})
             loci_fasta.raise_for_status()
             loci_file_name = os.path.join(directory, name + '.tfa')
             with open(loci_file_name, 'wb') as f:
@@ -222,7 +222,7 @@ def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str
 
         # Download profiles CSV
         profiles_url = url + '/profiles_csv'
-        profiles = session.get(profiles_url)
+        profiles = session.get(profiles_url, params={})
         profiles.raise_for_status()
         profiles_file_path = os.path.join(directory, f"{scheme_name}.txt")
         with open(profiles_file_path, 'w') as f:
