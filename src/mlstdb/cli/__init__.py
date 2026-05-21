@@ -19,8 +19,9 @@ def mlstdb():
     \b
     Recommended workflow:
     1. mlstdb connect --db pubmlst/pasteur    # Register credentials
-    2. mlstdb update --db pubmlst             # Update database
-    3. mlstdb fetch                           # [ADVANCED] Explore custom schemes
+    2. mlstdb update                          # Update database
+    3. mlstdb purge                           # Remove contaminated/erroneous profiles (optional)
+    4. mlstdb fetch                           # [ADVANCED] Explore custom schemes
     
     Most users only need to use 'connect' and 'update' commands.
     
