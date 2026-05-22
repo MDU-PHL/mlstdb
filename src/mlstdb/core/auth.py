@@ -2,6 +2,7 @@ import configparser
 import click
 import os
 import sys
+import requests
 from pathlib import Path
 from typing import Tuple, Optional
 from rauth import OAuth1Service, OAuth1Session
@@ -37,6 +38,51 @@ def setup_client_credentials(site: str) -> Tuple[str, str]:
     success(f"\nClient credentials saved to {file_path}")
     return client_id, client_secret
 
+
+def setup_api_key(site: str) -> str:
+    """Prompt for and save a personal API key (BIGSdb ≥ v1.53.0)."""
+    config = configparser.ConfigParser(interpolation=None)
+    file_path = get_config_dir() / "api_keys"
+    if file_path.exists():
+        config.read(file_path)
+
+    info("\nPlease enter your personal API key (from your BIGSdb profile page):")
+    api_key = click.prompt("API Key", type=str).strip()
+    while not api_key:
+        error("API key cannot be empty")
+        api_key = click.prompt("API Key", type=str).strip()
+
+    config[site] = {"api_key": api_key}
+    fd = os.open(file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as configfile:
+        config.write(configfile)
+    success(f"\nAPI key saved to {file_path}")
+    return api_key
+
+
+def retrieve_api_key(site: str) -> Optional[str]:
+    """Return the stored personal API key for *site*, or None if not found."""
+    config = configparser.ConfigParser(interpolation=None)
+    file_path = get_config_dir() / "api_keys"
+    if file_path.is_file():
+        config.read(file_path)
+        if config.has_section(site):
+            return config[site].get("api_key")
+    return None
+
+
+def _parse_error_message(response) -> str:
+    """Safely extract an error message from a failed API response."""
+    try:
+        data = response.json()
+        if isinstance(data, dict):
+            return data.get("message", f"HTTP {response.status_code}")
+        return f"HTTP {response.status_code}"
+    except Exception:
+        text = response.text[:200] if response.text else "(empty response)"
+        return f"HTTP {response.status_code} — {text}"
+
+
 def register_tokens(db: str):
     """Setup authentication tokens by registering with the service."""
     info(f"\nNo tokens found for {db}. Starting registration process...")
@@ -61,7 +107,16 @@ def register_tokens(db: str):
         headers={"User-Agent": f"mlstdb/{__version__}"}
     )
     if r.status_code != 200:
-        error(f"Failed to get request token: {r.json()['message']}")
+        msg = _parse_error_message(r)
+        if "timestamp" in msg.lower() or "600 seconds" in msg.lower():
+            error(
+                f"Failed to get request token: {msg}\n"
+                "  This is a clock synchronisation issue.\n"
+                "  On WSL/Linux, try:  sudo hwclock -s\n"
+                "  On WSL2, try:       sudo ntpdate time.windows.com"
+            )
+        else:
+            error(f"Failed to get request token: {msg}")
         sys.exit(1)
     
     request_token = r.json()["oauth_token"]
@@ -86,7 +141,7 @@ def register_tokens(db: str):
     )
     
     if r.status_code != 200:
-        error(f"Failed to get access token: {r.json()['message']}")
+        error(f"Failed to get access token: {_parse_error_message(r)}")
         sys.exit(1)
         
     access_token = r. json()["oauth_token"]
@@ -113,11 +168,12 @@ def register_tokens(db: str):
         access_token=access_token,
         access_token_secret=access_secret
     )
-    
-    r = session.get(url, headers={"User-Agent": f"mlstdb/{__version__}"})
-    
+    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+
+    r = session.get(url, params={})
+
     if r.status_code != 200:
-        error(f"Failed to get session token: {r.json()['message']}")
+        error(f"Failed to get session token: {_parse_error_message(r)}")
         sys.exit(1)
         
     token = r.json()["oauth_token"]
@@ -162,7 +218,7 @@ def get_client_credentials(key_name: str) -> Tuple[str, str]:
 
 def remove_db_credentials(config_dir: Path, db: str) -> None:
     """Remove credentials for specific database while preserving others."""
-    for file_name in ["client_credentials", "session_tokens", "access_tokens"]:
+    for file_name in ["client_credentials", "session_tokens", "access_tokens", "api_keys"]:
         file_path = config_dir / file_name
         if file_path.exists():
             config = configparser.ConfigParser(interpolation=None)
@@ -186,33 +242,65 @@ def retrieve_session_token(key_name: str) -> Tuple[str, str]:
     
     return None, None
 
-def test_connection(db: str, verbose: bool = False) -> bool:
-    """Test if the connection to the database is valid. 
-    
+def test_connection(db: str, verbose: bool = False, api_key: Optional[str] = None) -> bool:
+    """Test if the connection to the database is valid.
+
     Args:
         db: Database name ('pubmlst' or 'pasteur')
         verbose: If True, display JSON payload from test URI
-        
+        api_key: Optional personal API key (BIGSdb ≥ v1.53.0)
+
     Returns:
         True if connection is valid, False otherwise
     """
     try:
-        # Get client credentials
-        client_id, client_secret = get_client_credentials(db)
-        
-        # Get session tokens
-        session_token, session_secret = retrieve_session_token(db)
-        
-        if not session_token or not session_secret:
-            return False
-        
         # Test URL - using the database info endpoint
         test_url = f"{BASE_API[db]}/db/{DB_MAPPING[db]}/schemes"
-        
+
         info(f"\nTesting connection to {db}...")
         info(f"Using test database:  {DB_MAPPING[db]}")
+
+        if api_key:
+            # API key auth path (BIGSdb ≥ v1.53.0)
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": f"mlstdb/{__version__}",
+                "X-API-Key": api_key,
+            })
+            if verbose:
+                info(f"\nRequesting:  {test_url}")
+            response = session.get(test_url)
+            if verbose:
+                info(f"\nResponse status code: {response.status_code}")
+                if response.status_code == 200:
+                    try:
+                        import json as json_module
+                        info("\nJSON payload received:")
+                        click.echo(json_module.dumps(response.json(), indent=2))
+                    except Exception as e:
+                        error(f"Could not parse JSON response: {e}")
+            if response.status_code == 200:
+                return True
+            elif response.status_code == 401:
+                error("\nAPI key rejected (401). The key may be revoked or invalid.")
+                info("Run 'mlstdb connect --api-key' to save a new API key.")
+                return False
+            else:
+                error(f"\nConnection test failed with status code: {response.status_code}")
+                return False
+
+        # OAuth path
         info("\nPlease ensure you are registered to this database.")
-        
+
+        # Get client credentials
+        client_id, client_secret = get_client_credentials(db)
+
+        # Get session tokens
+        session_token, session_secret = retrieve_session_token(db)
+
+        if not session_token or not session_secret:
+            return False
+
         # Create OAuth session
         session = OAuth1Session(
             consumer_key=client_id,
@@ -221,12 +309,12 @@ def test_connection(db: str, verbose: bool = False) -> bool:
             access_token_secret=session_secret,
         )
         session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-        
+
         # Make test request
         if verbose:
             info(f"\nRequesting:  {test_url}")
-        
-        response = session.get(test_url)
+
+        response = session.get(test_url, params={})
         
         if verbose:
             info(f"\nResponse status code: {response.status_code}")
@@ -256,7 +344,7 @@ def test_connection(db: str, verbose: bool = False) -> bool:
                     access_token_secret=session_secret,
                 )
                 session.headers. update({"User-Agent": f"mlstdb/{__version__}"})
-                response = session.get(test_url)
+                response = session.get(test_url, params={})
                 
                 if response. status_code == 200:
                     success("Connection successful after token refresh!")
@@ -329,7 +417,7 @@ def refresh_session_token(db:  str, client_key: str, client_secret: str, verbose
         if verbose:
             info(f"Requesting new session token from:  {url_session}")
         
-        r = session_request.get(url_session)
+        r = session_request.get(url_session, params={})
         
         if r.status_code == 200:
             new_token = r.json()["oauth_token"]

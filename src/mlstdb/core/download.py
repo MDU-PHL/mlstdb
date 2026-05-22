@@ -26,10 +26,13 @@ def get_db_type_from_url(url: str) -> str:
         raise ValueError(f"Unable to determine database type from URL: {url}")
 
 
-def create_session(client_key=None, client_secret=None, session_token=None, 
-                   session_secret=None, no_auth=False):
-    """Create a reusable HTTP session (OAuth or plain)."""
-    if no_auth:
+def create_session(client_key=None, client_secret=None, session_token=None,
+                   session_secret=None, no_auth=False, api_key=None):
+    """Create a reusable HTTP session (OAuth, API key, or plain)."""
+    if api_key:
+        session = requests.Session()
+        session.headers.update({"X-API-Key": api_key})
+    elif no_auth:
         session = requests.Session()
     else:
         session = OAuth1Session(
@@ -42,31 +45,34 @@ def create_session(client_key=None, client_secret=None, session_token=None,
     return session
 
 
-def fetch_json(url, client_key, client_secret, session_token, session_secret, 
-               verbose=False, session=None):
+def fetch_json(url, client_key, client_secret, session_token, session_secret,
+               verbose=False, session=None, api_key=None):
     """Fetch JSON from URL with optional OAuth authentication.
-    
+
     If a pre-built session is provided, it will be reused for connection pooling.
     Otherwise a new session is created per call (legacy behaviour).
     """
     if verbose:
         print(f"Fetching JSON from {url}")
-    
+
     # Use provided session or create a new one
     if session is None:
-        session = create_session(client_key, client_secret, session_token, session_secret)
+        session = create_session(client_key, client_secret, session_token, session_secret,
+                                 api_key=api_key)
 
     try:
-        response = session.get(url)
+        response = session.get(url, params={})
         if verbose:
             print(f"Response code: {response.status_code}, URL: {url}")
-        
+
         if response.status_code == 404:
             print(f"Resource not found at URL: {url}")
             return None
-        
+
         # Handle 401 Unauthorised error - try once to refresh token
         if response.status_code == 401:
+            if api_key or not client_key:
+                response.raise_for_status()  # API keys/no-creds cannot use OAuth refresh
             # Determine which database we're working with
             db = get_db_type_from_url(url)
             
@@ -83,7 +89,7 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret,
                     access_token_secret=new_session_secret,
                 )
                 retry_session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
-                response = retry_session.get(url)
+                response = retry_session.get(url, params={})
                 if verbose:
                     print(f"Response code after token refresh: {response.status_code}, URL: {url}")
             # Raise for any remaining errors (e.g. 401 if not registered for this scheme)
@@ -96,29 +102,29 @@ def fetch_json(url, client_key, client_secret, session_token, session_secret,
         raise
 
 
-def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: str, 
-                   session_token: str, session_secret: str, scheme_name: str, 
+def get_mlst_files(url: str, directory: str, client_key: str, client_secret: str,
+                   session_token: str, session_secret: str, scheme_name: str,
                    verbose: bool = False, no_auth: bool = False,
-                   session=None, show_progress: bool = True) -> None:
+                   session=None, show_progress: bool = True, api_key=None) -> None:
     """Download MLST data and save them in the given directory.
-    
+
     If a pre-built session is provided, it will be reused for connection pooling.
     Set show_progress=False to suppress the per-locus tqdm bar (useful in parallel mode).
     """
     if session is None:
-        session = create_session(client_key, client_secret, session_token, 
-                                 session_secret, no_auth=no_auth)
+        session = create_session(client_key, client_secret, session_token,
+                                 session_secret, no_auth=no_auth, api_key=api_key)
 
     if verbose:
         info(f"Fetching MLST scheme from {url}...")
 
     try:
-        response = session.get(url)
+        response = session.get(url, params={})
         
         # Handle expired token (401)
         if response.status_code == 401:
-            if no_auth:
-                response.raise_for_status()  # Let caller handle the error
+            if no_auth or api_key or not client_key:
+                response.raise_for_status()  # Let caller handle; no OAuth refresh available
             if verbose:
                 info("Session token expired, attempting to refresh...")
             
@@ -138,7 +144,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
                     access_token_secret=session_secret,
                 )
                 session.headers.update({"User-Agent":  f"mlstdb/{__version__}"})
-                response = session.get(url)
+                response = session.get(url, params={})
             else:
                 error("Failed to refresh session token")
                 sys. exit(1)
@@ -208,7 +214,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
         loci_iter = tqdm(mlst_scheme['loci'], desc="Downloading loci", unit="locus") if show_progress else mlst_scheme['loci']
         for loci in loci_iter:
             name = loci. split('/')[-1]
-            loci_fasta = session.get(loci + '/alleles_fasta')
+            loci_fasta = session.get(loci + '/alleles_fasta', params={})
             loci_fasta.raise_for_status()
             loci_file_name = os.path.join(directory, name + '.tfa')
             with open(loci_file_name, 'wb') as f:
@@ -216,7 +222,7 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
 
         # Download profiles CSV
         profiles_url = url + '/profiles_csv'
-        profiles = session.get(profiles_url)
+        profiles = session.get(profiles_url, params={})
         profiles.raise_for_status()
         profiles_file_path = os.path.join(directory, f"{scheme_name}.txt")
         with open(profiles_file_path, 'w') as f:
@@ -235,12 +241,12 @@ def get_mlst_files(url:  str, directory: str, client_key: str, client_secret: st
             error(f"Resource not found at URL: {url}")
         raise
 
-def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret, 
-                    verbose=False, session=None):
+def fetch_resources(base_uri, client_key, client_secret, session_token, session_secret,
+                    verbose=False, session=None, api_key=None):
     if verbose:
         print(f"Fetching resources from {base_uri}")
-    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret, 
-                      verbose, session=session)
+    return fetch_json(base_uri, client_key, client_secret, session_token, session_secret,
+                      verbose, session=session, api_key=api_key)
 
 def clear_file(file_path):
     """Clear the contents of a file or create it if it doesn't exist."""
