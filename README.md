@@ -8,16 +8,6 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/mlstdb/badges/downloads.svg)](https://anaconda.org/bioconda/mlstdb)
 
-> ⚠️ **Known Issue: `mlstdb connect` is currently not working**
->
-> Due to recent changes in the BIGSdb (v1.53.x), the `mlstdb connect` OAuth authentication flow is currently broken. We are actively working on a fix.
->
-> **Workaround:** Use the `--no-auth` flag with `mlstdb update` to download public schemes without authentication in the interim:
-> ```sh
-> mlstdb update --no-auth
-> ```
-> We apologise for the inconvenience and will release a fix as soon as possible. Track progress in [#35](https://github.com/MDU-PHL/mlstdb/issues/35).
-
 Keep your [`mlst`](https://github.com/tseemann/mlst) databases up to date. `mlstdb` handles OAuth authentication with [PubMLST](https://pubmlst.org/) and [BIGSdb Pasteur](https://bigsdb.pasteur.fr/) so you can download the latest MLST schemes and build a BLAST database, in two commands.
 
 **[Full Documentation](https://MDU-PHL.github.io/mlstdb)**
