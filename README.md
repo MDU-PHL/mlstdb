@@ -42,6 +42,8 @@ pip install mlstdb
 
 ```sh
 mlstdb connect --db pubmlst
+# or use --api-key for pubmlst (currently not available for pasteur)
+mlstdb connect --db pubmlst --api-key
 mlstdb connect --db pasteur
 ```
 
