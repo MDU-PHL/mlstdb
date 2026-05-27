@@ -449,4 +449,92 @@ def refresh_session_token(db:  str, client_key: str, client_secret: str, verbose
         if verbose:
             import traceback
             error(traceback.format_exc())
-        return None
+
+
+def ping_url(
+    url: str,
+    db: Optional[str] = None,
+    verbose: bool = False,
+    no_auth: bool = False,
+) -> tuple:
+    """Make a single GET request to *url* and return the result.
+
+    Auth priority (unless *no_auth* is True):
+    1. API key stored for *db* (``X-API-Key`` header).
+    2. OAuth session token stored for *db*.
+    3. Unauthenticated fallback with a warning.
+
+    Args:
+        url: The API URL to probe.
+        db: Database name (``'pubmlst'`` or ``'pasteur'``).  Required for
+            authenticated paths; ignored when *no_auth* is ``True``.
+        verbose: Print extra request detail.
+        no_auth: Skip all authentication and use a plain session.
+
+    Returns:
+        Tuple of ``(status_code: int, body: str, json_payload: dict | None)``.
+        *json_payload* is ``None`` when the response body is not valid JSON.
+    """
+    import json as _json
+
+    session = None
+    auth_mode = "unauthenticated"
+
+    if no_auth:
+        session = requests.Session()
+        session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+        auth_mode = "no-auth"
+    else:
+        # 1. Try API key
+        api_key = retrieve_api_key(db) if db else None
+        if api_key:
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": f"mlstdb/{__version__}",
+                "X-API-Key": api_key,
+            })
+            auth_mode = "api-key"
+        else:
+            # 2. Try OAuth session token
+            try:
+                client_id, client_secret = get_client_credentials(db)
+                session_token, session_secret = retrieve_session_token(db)
+                if session_token and session_secret:
+                    session = OAuth1Session(
+                        consumer_key=client_id,
+                        consumer_secret=client_secret,
+                        access_token=session_token,
+                        access_token_secret=session_secret,
+                    )
+                    session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+                    auth_mode = "oauth"
+            except ValueError:
+                pass
+
+            # 3. Unauthenticated fallback
+            if session is None:
+                click.secho(
+                    f"\nWarning: No credentials found for '{db}', trying unauthenticated...",
+                    fg="yellow",
+                )
+                session = requests.Session()
+                session.headers.update({"User-Agent": f"mlstdb/{__version__}"})
+                auth_mode = "unauthenticated"
+
+    if verbose:
+        info(f"\nAuth mode:   {auth_mode}")
+        info(f"Requesting:  {url}")
+
+    response = session.get(url)
+
+    if verbose:
+        info(f"Status:      {response.status_code}")
+
+    body = response.text
+    json_payload = None
+    try:
+        json_payload = response.json()
+    except Exception:
+        pass
+
+    return response.status_code, body, json_payload

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2026-05-27
+
+### Added
+
+- New `mlstdb ping` subcommand for probing a single API endpoint and displaying the HTTP status and response body. Authentication is attempted automatically in priority order: personal API key, OAuth session token, unauthenticated fallback (with a warning). The `--no-auth` flag skips all authentication, matching the behaviour of `mlstdb update --no-auth`.
+- New `ping_url()` function in `mlstdb.core.auth` encapsulates the auth-priority logic shared by the ping command.
+
 ## [1.2.0] - 2026-05-22
 
 ### Added

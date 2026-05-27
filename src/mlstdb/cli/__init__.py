@@ -7,6 +7,7 @@ import click
 from mlstdb.__about__ import __version__
 from mlstdb.cli.connect import connect
 from mlstdb.cli.fetch import fetch
+from mlstdb.cli.ping import ping
 from mlstdb.cli.purge import purge
 from mlstdb.cli.update import update
 
@@ -30,6 +31,7 @@ def mlstdb():
 
 
 mlstdb.add_command(connect)
+mlstdb.add_command(ping)
 mlstdb.add_command(update)
 mlstdb.add_command(fetch)
 mlstdb.add_command(purge)
