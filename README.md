@@ -65,6 +65,16 @@ mlst --blastdb blast/mlst.fa --datadir pubmlst your_assembly.fasta
 
 That's it. For advanced scheme exploration, custom filtering, and detailed option reference, see the [full documentation](https://MDU-PHL.github.io/mlstdb).
 
+## Probing API endpoints
+
+To verify that a specific API endpoint is reachable and your credentials are working, use `mlstdb ping`:
+
+```sh
+mlstdb ping https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/67/profiles_csv --db pubmlst
+```
+
+See the [ping documentation](https://MDU-PHL.github.io/mlstdb/usage/ping/) for the full reference.
+
 ## Removing contaminated STs or alleles
 
 Discovered a dodgy sequence type or allele in your local database? You can remove it without re-downloading the whole scheme:
