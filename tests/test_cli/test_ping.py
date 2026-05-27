@@ -154,7 +154,7 @@ def test_ping_unauthenticated_fallback():
 # ---------------------------------------------------------------------------
 
 def test_ping_401_response():
-    """401 responses exit with code 1 and print advice."""
+    """401 responses print the status, body, and a short hint, then exit 0."""
     mock_resp = MagicMock()
     mock_resp.status_code = 401
     mock_resp.text = "Unauthorised"
@@ -168,13 +168,13 @@ def test_ping_401_response():
         runner = CliRunner()
         result = runner.invoke(ping, [TEST_URL, "--no-auth"])
 
-    assert result.exit_code == 1
-    assert "401" in result.output
+    assert result.exit_code == 0
+    assert "HTTP 401" in result.output
     assert "mlstdb connect" in result.output
 
 
 def test_ping_403_response():
-    """403 responses exit with code 1 and print advice."""
+    """403 responses print the status, body, and a short hint, then exit 0."""
     mock_resp = MagicMock()
     mock_resp.status_code = 403
     mock_resp.text = "Forbidden"
@@ -188,9 +188,9 @@ def test_ping_403_response():
         runner = CliRunner()
         result = runner.invoke(ping, [TEST_URL, "--no-auth"])
 
-    assert result.exit_code == 1
-    assert "403" in result.output
-    assert "permission" in result.output.lower()
+    assert result.exit_code == 0
+    assert "HTTP 403" in result.output
+    assert "mlstdb connect" in result.output
 
 
 # ---------------------------------------------------------------------------
