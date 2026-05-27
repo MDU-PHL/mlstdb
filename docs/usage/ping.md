@@ -1,6 +1,6 @@
 # Ping
 
-The `ping` command sends a single GET request to an API endpoint and displays the HTTP status code and response body. It is useful for verifying that your credentials are working or for exploring raw API responses before running `mlstdb update`.
+The `ping` command sends a single GET request to an API endpoint and displays the HTTP status code and response body. It is useful for verifying that your credentials are working or for exploring raw API responses.
 
 ## Basic Usage
 
@@ -41,32 +41,42 @@ Expected output:
 ```
 HTTP 200  https://rest.pubmlst.org/db
 
-{
-  "databases": [
-    {
-      "name": "pubmlst_neisseria_seqdef",
-      "description": "Neisseria spp. sequence definitions",
-      "href": "https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef"
-    },
+[
+  {
+    "description": "Achromobacter spp.",
+    "databases": [
+      {
+        "name": "pubmlst_achromobacter_isolates",
+        "description": "Achromobacter spp. isolates",
+        "href": "https://rest.pubmlst.org/db/pubmlst_achromobacter_isolates"
+      },
+      {
+        "name": "pubmlst_achromobacter_seqdef",
+        "href": "https://rest.pubmlst.org/db/pubmlst_achromobacter_seqdef",
+        "description": "Achromobacter spp. sequence/profile definitions"
+      }
+    ],
+    "name": "achromobacter"
+  },
     ...
-  ]
-}
+]
 ```
 
 ### Probe an authenticated endpoint using a stored API key
 
 ```sh
-mlstdb ping https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/67/profiles_csv --db pubmlst
+mlstdb ping https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/1/profiles_csv --db pubmlst
 ```
 
 Expected output (first few lines of a profile CSV):
 
 ```
-HTTP 200  https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/67/profiles_csv
+HTTP 200  https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/1/profiles_csv
 
-ST,abcZ,adk,aroE,fumC,gdh,pdhC,pgm,clonal_complex
-1,1,3,1,1,1,1,3,ST-1 complex
-2,1,3,4,2,5,2,1,ST-32 complex
+ST      abcZ    adk     aroE    fumC    gdh     pdhC    pgm     clonal_complex
+1       1       3       1       1       1       1       3       ST-1 complex
+2       1       3       4       7       1       1       3       ST-1 complex
+3       1       3       1       1       1       23      13      ST-1 complex
 ...
 ```
 
@@ -79,17 +89,28 @@ mlstdb ping https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3
 Expected output:
 
 ```
-Auth mode:   oauth
+Auth mode:   api-key
 Requesting:  https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3
 Status:      200
 
 HTTP 200  https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3
 
 {
-  "id": 3,
-  "description": "Bordetella MLST",
-  "loci": [...],
-  "profiles_csv": "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3/profiles_csv"
+  "profiles": "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/schemes/3/profiles",
+  "message": "Please note that you are currently restricted to accessing data that was submitted on or prior to 2024-12-31. Please authenticate to access the full dataset.",
+  "description": "MLST",
+  "has_primary_key_field": true,
+  "loci": [
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/adk",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/fumC",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/glyA",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/tyrB",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/icd",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/pepA",
+    "https://bigsdb.pasteur.fr/api/db/pubmlst_bordetella_seqdef/loci/pgm"
+  ],
+  "records": 118,
+  ...
 }
 ```
 
@@ -107,45 +128,23 @@ Warning: No credentials found for 'pubmlst', trying unauthenticated...
 HTTP 200  https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes
 
 {
-  "schemes": [...]
+  "schemes": [
+    {
+      "description": "MLST",
+      "scheme": "https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/1"
+    },
+    ...
+  ],
 }
 ```
 
-## Error Responses
-
-### 401 Unauthorised
-
-A 401 response means the server rejected your credentials. `ping` exits with code 1 and suggests remediation steps:
-
-```
-HTTP 401  https://rest.pubmlst.org/db/pubmlst_neisseria_seqdef/schemes/67/profiles_csv
-
-Unauthorised
-
-✗ 401 Unauthorised — the server rejected your credentials.
-
-This usually means one of the following:
-  1. Your session token has expired — run 'mlstdb connect --db <db>' to refresh.
-  2. You are not registered for this scheme/database.
-     Visit the database website to register your client application.
-  3. Your API key is invalid or revoked — run 'mlstdb connect --db <db> --api-key' to update it.
-```
-
-### 403 Forbidden
-
-A 403 response means your account does not have permission to access the resource:
-
-```
-HTTP 403  ...
-
-✗ 403 Forbidden — your account does not have permission to access this resource.
-
-This usually means:
-  1. You are not registered as a curator or user for this scheme.
-  2. Contact the database administrator to request access.
-```
-
 ## Tips
+
+If the server returns a 401 or 403, `ping` prints a short hint:
+
+```
+Hint: run 'mlstdb connect --db <db>' to configure credentials, or use --no-auth for unauthenticated access.
+```
 
 Use `ping` with `| less` to page through long profile CSV responses:
 
