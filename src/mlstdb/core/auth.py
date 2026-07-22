@@ -11,8 +11,20 @@ from mlstdb.utils import error, success, info
 from mlstdb.__about__ import __version__
 
 
-def setup_client_credentials(site: str) -> Tuple[str, str]:
-    """Setup and save client credentials."""
+def setup_client_credentials(site: str, force: bool = False) -> Tuple[str, str]:
+    """Setup and return client credentials.
+
+    Checks environment variables and stored config first. Only prompts interactively
+    if credentials are not found or force is True.
+    """
+    if not force:
+        try:
+            client_id, client_secret = get_client_credentials(site)
+            info(f"Using existing client credentials for {site}")
+            return client_id, client_secret
+        except ValueError:
+            pass
+
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "client_credentials"
     
