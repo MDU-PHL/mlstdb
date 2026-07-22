@@ -61,7 +61,11 @@ def setup_api_key(site: str) -> str:
 
 
 def retrieve_api_key(site: str) -> Optional[str]:
-    """Return the stored personal API key for *site*, or None if not found."""
+    """Return personal API key for *site*, checking environment variables then config file."""
+    env_var = f"MLSTDB_{site.upper()}_API_KEY"
+    if os.environ.get(env_var):
+        return os.environ[env_var]
+
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "api_keys"
     if file_path.is_file():
@@ -204,7 +208,14 @@ def get_config_dir() -> Path:
     return config_dir
 
 def get_client_credentials(key_name: str) -> Tuple[str, str]:
-    """Get OAuth client credentials from config file."""
+    """Get OAuth client credentials, checking environment variables then config file."""
+    env_id = f"MLSTDB_{key_name.upper()}_CLIENT_ID"
+    env_secret = f"MLSTDB_{key_name.upper()}_CLIENT_SECRET"
+    client_id = os.environ.get(env_id)
+    client_secret = os.environ.get(env_secret)
+    if client_id and client_secret:
+        return client_id, client_secret
+
     config = configparser.ConfigParser(interpolation=None)
     file_path = get_config_dir() / "client_credentials"
     
