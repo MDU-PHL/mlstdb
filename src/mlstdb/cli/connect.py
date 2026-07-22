@@ -1,6 +1,6 @@
 import click
 import configparser
-from mlstdb.core.auth import register_tokens, test_connection, setup_api_key, retrieve_api_key
+from mlstdb.core.auth import register_tokens, test_connection, setup_api_key, retrieve_api_key, get_client_credentials
 from mlstdb.core.config import get_config_dir
 from mlstdb.utils import error, success, info
 
@@ -62,21 +62,24 @@ def connect(db, use_api_key, verbose):
 
         # --- OAuth registration path ---
         config_dir = get_config_dir()
-        client_creds_file = config_dir / "client_credentials"
         session_tokens_file = config_dir / "session_tokens"
         
+        # Check if client credentials exist (env var or file)
+        try:
+            get_client_credentials(db)
+            has_client_creds = True
+        except ValueError:
+            has_client_creds = False
+
         # Check if already connected
         config = configparser.ConfigParser(interpolation=None)
         
         already_connected = False
-        if client_creds_file.exists() and session_tokens_file.exists():
-            config.read(client_creds_file)
-            has_client_creds = config.has_section(db)
-            
+        if has_client_creds and session_tokens_file.exists():
             config.read(session_tokens_file)
             has_session_tokens = config.has_section(db)
             
-            if has_client_creds and has_session_tokens:
+            if has_session_tokens:
                 already_connected = True
                 click.secho(f"\n✓ Credentials found for {db}", fg="green")
                 
