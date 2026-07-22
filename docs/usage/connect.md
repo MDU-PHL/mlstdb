@@ -161,4 +161,27 @@ mlstdb connect --db pubmlst
 
 Answer **yes** to go through the registration flow again.
 
+---
+
+## Environment Variables
+
+For headless execution, CI/CD pipelines, containerised environments, or HPC batch jobs, credentials can be supplied using database-specific environment variables:
+
+| Credential Type | Database | Environment Variable |
+| :--- | :--- | :--- |
+| **Personal API Key** | PubMLST | `MLSTDB_PUBMLST_API_KEY` |
+| **Personal API Key** | Pasteur | `MLSTDB_PASTEUR_API_KEY` |
+| **OAuth Client ID** | PubMLST | `MLSTDB_PUBMLST_CLIENT_ID` |
+| **OAuth Client Secret** | PubMLST | `MLSTDB_PUBMLST_CLIENT_SECRET` |
+| **OAuth Client ID** | Pasteur | `MLSTDB_PASTEUR_CLIENT_ID` |
+| **OAuth Client Secret** | Pasteur | `MLSTDB_PASTEUR_CLIENT_SECRET` |
+
+### Precedence
+
+`mlstdb` evaluates credentials in the following order:
+1. **Environment Variables** (e.g., `MLSTDB_PUBMLST_API_KEY` or `MLSTDB_PUBMLST_CLIENT_ID` / `MLSTDB_PUBMLST_CLIENT_SECRET`)
+2. **Local Configuration Files** (`~/.config/mlstdb/api_keys` or `~/.config/mlstdb/client_credentials`)
+3. **Interactive Terminal Prompt** (if credentials are required and not found)
+
+
 
